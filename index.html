@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Chawp Admin Portal</title>
+    <link rel="manifest" href="/manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        body { background: #1c1c1e; color: #ffffff; font-family: 'SF Pro Display', sans-serif; margin: 0; padding: 0 0 100px 0; min-height: 100vh; -webkit-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none; overflow-x: hidden; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; position: relative; }
+        .section { background: #252527; border-radius: 20px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); transition: transform 0.3s ease, opacity 0.3s ease; }
+        .section.hidden { transform: translateY(20px); opacity: 0; pointer-events: none; }
+        h1 { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.5px; text-align: center; margin-bottom: 10px; }
+        h2 { font-size: 1.75rem; font-weight: 600; margin-bottom: 20px; }
+        p { font-size: 1.1rem; opacity: 0.8; }
+        .btn { background: #007aff; color: #fff; padding: 12px 24px; border-radius: 14px; font-weight: 500; text-align: center; transition: background 0.2s ease, transform 0.2s ease; border: none; cursor: pointer; }
+        .btn:hover { background: #0062cc; transform: translateY(-2px); }
+        .btn-secondary { background: #ff3b30; padding: 8px 18px; }
+        .btn-secondary:hover { background: #dc2626; }
+        .btn-edit { background: #34c759; padding: 8px 18px; }
+        .btn-edit:hover { background: #2ea44f; }
+        .input { background: #2c2c2e; border: none; color: #fff; padding: 14px; border-radius: 12px; width: 100%; margin-bottom: 15px; font-size: 1rem; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3); transition: background 0.2s ease; }
+        .input:focus { background: #343436; outline: none; }
+        .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #34c759; padding: 12px 24px; border-radius: 14px; text-align: center; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); z-index: 1000; opacity: 0; transition: opacity 0.3s ease; }
+        .notification.show { opacity: 1; }
+        .notification.error { background: #ff3b30; }
+        .item { background: #2c2c2e; padding: 20px; border-radius: 14px; margin-bottom: 15px; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .item:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); }
+        .item h4 { margin: 0 0 10px; font-size: 1.25rem; font-weight: 600; }
+        .item p { margin: 5px 0; font-size: 0.95rem; opacity: 0.85; }
+        .footer-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(44, 44, 46, 0.95); backdrop-filter: blur(20px); padding: 15px 20px; display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5); z-index: 1000; }
+        .footer-nav button { background: none; color: #a1a1a6; padding: 10px 14px; font-size: 0.9rem; font-weight: 500; border-radius: 14px; transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .footer-nav button i { font-size: 1.2rem; }
+        .footer-nav button span { display: block; }
+        .footer-nav button.active { background: #007aff; color: #fff; transform: scale(1.05); }
+        .footer-nav button:hover { color: #fff; }
+        @media (max-width: 640px) { .footer-nav { padding: 10px 10px; } .footer-nav button { font-size: 0.8rem; padding: 8px 12px; } .footer-nav button i { font-size: 1.1rem; } }
+        #login-section { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        #login-section.hidden { display: none; }
+        #logout-btn { background: #ff3b30; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div id="login-section" class="section">
+        <h1 class="text-4xl font-semibold mb-6">Admin Login</h1>
+        <input type="email" id="email" placeholder="Email" class="input">
+        <input type="password" id="password" placeholder="Password" class="input">
+        <button id="login-btn" class="btn w-full">Login</button>
+    </div>
+
+    <div id="main-content" class="container hidden">
+        <h1 class="text-4xl font-semibold text-center mb-4">🛠️ Chawp Admin Portal</h1>
+        <p class="text-center text-gray-400 mb-12">Oversee the entire Chawp ecosystem.</p>
+
+        <div id="notification" class="notification"></div>
+
+        <!-- Restaurants Section -->
+        <div id="restaurants" class="section">
+            <h2 class="text-2xl font-semibold mb-4">Manage Restaurants</h2>
+            <form id="restaurant-form" class="mb-6">
+                <input type="text" id="restaurant-name" placeholder="Restaurant Name" class="input">
+                <input type="text" id="restaurant-image" placeholder="Image URL" class="input">
+                <button type="submit" class="btn w-full">Add Restaurant</button>
+            </form>
+            <div id="restaurant-list"></div>
+        </div>
+
+        <!-- Vendor Mappings Section -->
+        <div id="vendor-mappings" class="section hidden">
+            <h2 class="text-2xl font-semibold mb-4">Vendor Mappings</h2>
+            <form id="vendor-mapping-form" class="mb-6">
+                <input type="email" id="vendor-email" placeholder="Vendor Email" class="input">
+                <input type="text" id="vendor-restaurant-id" placeholder="Restaurant ID" class="input">
+                <button type="submit" class="btn w-full">Add Mapping</button>
+            </form>
+            <div id="vendor-mapping-list"></div>
+        </div>
+
+        <!-- Menus Section -->
+        <div id="menus" class="section hidden">
+            <h2 class="text-2xl font-semibold mb-4">Manage Menus</h2>
+            <form id="menu-form" class="mb-6">
+                <input type="text" id="menu-restaurant-id" placeholder="Restaurant ID" class="input">
+                <input type="text" id="menu-name" placeholder="Dish Name" class="input">
+                <input type="number" id="menu-price" placeholder="Price (GH₵)" step="0.01" class="input">
+                <button type="submit" class="btn w-full">Add Dish</button>
+            </form>
+            <div id="menu-list"></div>
+        </div>
+
+        <!-- Orders Section -->
+        <div id="orders" class="section hidden">
+            <h2 class="text-2xl font-semibold mb-4">View Orders</h2>
+            <div id="orders-list"></div>
+        </div>
+
+        <!-- Users Section -->
+        <div id="users" class="section hidden">
+            <h2 class="text-2xl font-semibold mb-4">Manage Users</h2>
+            <div id="users-list"></div>
+        </div>
+
+        <!-- Carts Section -->
+        <div id="carts" class="section hidden">
+            <h2 class="text-2xl font-semibold mb-4">View Carts</h2>
+            <div id="carts-list"></div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings" class="section hidden">
+            <h2 class="text-2xl font-semibold mb-4">Settings</h2>
+            <form id="settings-form" class="mb-6">
+                <input type="text" id="settings-key" placeholder="Setting Key" class="input">
+                <input type="text" id="settings-value" placeholder="Setting Value" class="input">
+                <button type="submit" class="btn w-full">Update Setting</button>
+            </form>
+            <button id="logout-btn" class="btn btn-secondary w-full mt-2">Logout</button>
+            <div id="settings-list"></div>
+        </div>
+
+        <!-- Footer Navigation -->
+        <div class="footer-nav">
+            <button id="restaurants-btn" class="active"><i class="fas fa-store"></i><span>Restaurants</span></button>
+            <button id="vendor-mappings-btn"><i class="fas fa-user-tie"></i><span>Vendors</span></button>
+            <button id="menus-btn"><i class="fas fa-utensils"></i><span>Menus</span></button>
+            <button id="orders-btn"><i class="fas fa-shopping-cart"></i><span>Orders</span></button>
+            <button id="users-btn"><i class="fas fa-users"></i><span>Users</span></button>
+            <button id="carts-btn"><i class="fas fa-shopping-basket"></i><span>Carts</span></button>
+            <button id="settings-btn"><i class="fas fa-cog"></i><span>Settings</span></button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { 
+            getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, deleteDoc, updateDoc, query, onSnapshot 
+        } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { 
+            getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyADvpUQWo75ExePGoCRirD2mM-lmfM4Cmc",
+            authDomain: "von600-7982d.firebaseapp.com",
+            projectId: "von600-7982d",
+            storageBucket: "von600-7982d.appspot.com",
+            messagingSenderId: "164591218045",
+            appId: "1:164591218045:web:afe17512e16573e7903014",
+            measurementId: "G-E69DMPLXBK"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const adminEmails = ["admin@gmail.com"]; // Replace with your admin email(s)
+
+        // NOTE: Firestore rules are currently set to allow all reads/writes (true) for testing.
+        // Revert to secure rules after confirming functionality.
+
+        function showNotification(message, type = "success") {
+            const notification = document.getElementById("notification");
+            notification.textContent = message;
+            notification.className = `notification ${type === "error" ? "error" : ""}`;
+            notification.classList.add("show");
+            setTimeout(() => notification.classList.remove("show"), 3000);
+        }
+
+        function toggleSection(sectionId) {
+            const sections = ["restaurants", "vendor-mappings", "menus", "orders", "users", "carts", "settings"];
+            sections.forEach(id => {
+                document.getElementById(id).classList.toggle("hidden", id !== sectionId);
+            });
+            const buttons = document.querySelectorAll(".footer-nav button");
+            buttons.forEach(btn => {
+                btn.classList.toggle("active", btn.id === `${sectionId}-btn`);
+            });
+        }
+
+        async function loadRestaurants() {
+            try {
+                const restaurantList = document.getElementById("restaurant-list");
+                const querySnapshot = await getDocs(collection(db, "restaurant"));
+                let output = "";
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    output += `
+                        <div class="item">
+                            <h4>${data.name || "Unnamed"}</h4>
+                            <p>ID: ${doc.id}</p>
+                            <p>Image: ${data.image || "None"}</p>
+                            <p>Status: ${data.isOpen ? "Open" : "Closed"}</p>
+                            <button class="btn btn-secondary delete-restaurant" data-id="${doc.id}">Delete</button>
+                        </div>
+                    `;
+                });
+                restaurantList.innerHTML = output || "<p class='text-gray-400'>No restaurants found.</p>";
+                restaurantList.querySelectorAll(".delete-restaurant").forEach(btn => {
+                    btn.addEventListener("click", () => deleteRestaurant(btn.dataset.id));
+                });
+            } catch (error) {
+                showNotification("Error loading restaurants: " + error.message, "error");
+            }
+        }
+
+        async function loadVendorMappings() {
+            try {
+                const mappingList = document.getElementById("vendor-mapping-list");
+                const querySnapshot = await getDocs(collection(db, "vendorMappings"));
+                let output = "";
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    output += `
+                        <div class="item">
+                            <h4>${doc.id}</h4>
+                            <p>Restaurant ID: ${data.restaurantId}</p>
+                            <button class="btn btn-secondary delete-mapping" data-id="${doc.id}">Delete</button>
+                        </div>
+                    `;
+                });
+                mappingList.innerHTML = output || "<p class='text-gray-400'>No mappings found.</p>";
+                mappingList.querySelectorAll(".delete-mapping").forEach(btn => {
+                    btn.addEventListener("click", () => deleteVendorMapping(btn.dataset.id));
+                });
+            } catch (error) {
+                showNotification("Error loading vendor mappings: " + error.message, "error");
+            }
+        }
+
+        async function loadMenus() {
+            try {
+                const menuList = document.getElementById("menu-list");
+                const restaurants = await getDocs(collection(db, "restaurant"));
+                let output = "";
+                for (const restaurant of restaurants.docs) {
+                    const menuSnapshot = await getDocs(collection(db, "restaurant", restaurant.id, "menu"));
+                    menuSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        output += `
+                            <div class="item">
+                                <h4>${data.name}</h4>
+                                <p>Restaurant: ${restaurant.id}</p>
+                                <p>Price: GH₵${data.price.toFixed(2)}</p>
+                                <button class="btn btn-secondary delete-menu" data-restaurant="${restaurant.id}" data-id="${doc.id}">Delete</button>
+                            </div>
+                        `;
+                    });
+                }
+                menuList.innerHTML = output || "<p class='text-gray-400'>No menu items found.</p>";
+                menuList.querySelectorAll(".delete-menu").forEach(btn => {
+                    btn.addEventListener("click", () => deleteMenuItem(btn.dataset.restaurant, btn.dataset.id));
+                });
+            } catch (error) {
+                showNotification("Error loading menus: " + error.message, "error");
+            }
+        }
+
+        function loadOrders() {
+            const ordersList = document.getElementById("orders-list");
+            onSnapshot(collection(db, "orders"), (snapshot) => {
+                let output = "";
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const items = data.items?.map(item => `${item.quantity}x ${item.name}`).join(", ") || "N/A";
+                    output += `
+                        <div class="item">
+                            <h4>Order ID: ${doc.id}</h4>
+                            <p>Restaurant: ${data.restaurantId}</p>
+                            <p>Items: ${items}</p>
+                            <p>Total: GH₵${data.totalAmount.toFixed(2)}</p>
+                            <p>Status: ${data.status}</p>
+                            <p>Time: ${new Date(data.timestamp).toLocaleString()}</p>
+                            <button class="btn btn-secondary delete-order" data-id="${doc.id}">Delete</button>
+                        </div>
+                    `;
+                });
+                ordersList.innerHTML = output || "<p class='text-gray-400'>No orders found.</p>";
+                ordersList.querySelectorAll(".delete-order").forEach(btn => {
+                    btn.addEventListener("click", () => deleteOrder(btn.dataset.id));
+                });
+            }, (error) => {
+                console.error("Orders snapshot error:", error);
+                ordersList.innerHTML = "<p class='text-gray-400'>Error loading orders.</p>";
+                showNotification("Error loading orders: " + error.message, "error");
+            });
+        }
+
+        async function loadUsers() {
+            try {
+                const usersList = document.getElementById("users-list");
+                const querySnapshot = await getDocs(collection(db, "users"));
+                let output = "";
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    output += `
+                        <div class="item">
+                            <h4>User ID: ${doc.id}</h4>
+                            <p>Data: ${JSON.stringify(data)}</p>
+                            <button class="btn btn-secondary delete-user" data-id="${doc.id}">Delete</button>
+                        </div>
+                    `;
+                });
+                usersList.innerHTML = output || "<p class='text-gray-400'>No users found.</p>";
+                usersList.querySelectorAll(".delete-user").forEach(btn => {
+                    btn.addEventListener("click", () => deleteUser(btn.dataset.id));
+                });
+            } catch (error) {
+                showNotification("Error loading users: " + error.message, "error");
+            }
+        }
+
+        async function loadCarts() {
+            try {
+                const cartsList = document.getElementById("carts-list");
+                const querySnapshot = await getDocs(collection(db, "cart"));
+                let output = "";
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    output += `
+                        <div class="item">
+                            <h4>Cart ID: ${doc.id}</h4>
+                            <p>User: ${data.userId || "N/A"}</p>
+                            <p>Data: ${JSON.stringify(data)}</p>
+                            <button class="btn btn-secondary delete-cart" data-id="${doc.id}">Delete</button>
+                        </div>
+                    `;
+                });
+                cartsList.innerHTML = output || "<p class='text-gray-400'>No carts found.</p>";
+                cartsList.querySelectorAll(".delete-cart").forEach(btn => {
+                    btn.addEventListener("click", () => deleteCart(btn.dataset.id));
+                });
+            } catch (error) {
+                showNotification("Error loading carts: " + error.message, "error");
+            }
+        }
+
+        async function loadSettings() {
+            try {
+                const settingsList = document.getElementById("settings-list");
+                const querySnapshot = await getDocs(collection(db, "settings"));
+                let output = "";
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    output += `
+                        <div class="item">
+                            <h4>${doc.id}</h4>
+                            <p>Value: ${data.value}</p>
+                            <button class="btn btn-secondary delete-setting" data-id="${doc.id}">Delete</button>
+                        </div>
+                    `;
+                });
+                settingsList.innerHTML = output || "<p class='text-gray-400'>No settings found.</p>";
+                settingsList.querySelectorAll(".delete-setting").forEach(btn => {
+                    btn.addEventListener("click", () => deleteSetting(btn.dataset.id));
+                });
+            } catch (error) {
+                showNotification("Error loading settings: " + error.message, "error");
+            }
+        }
+
+        // Delete Functions
+        async function deleteRestaurant(id) {
+            try {
+                await deleteDoc(doc(db, "restaurant", id));
+                showNotification("Restaurant deleted!");
+                loadRestaurants();
+            } catch (error) {
+                showNotification("Error deleting restaurant: " + error.message, "error");
+            }
+        }
+        async function deleteVendorMapping(id) {
+            try {
+                await deleteDoc(doc(db, "vendorMappings", id));
+                showNotification("Mapping deleted!");
+                loadVendorMappings();
+            } catch (error) {
+                showNotification("Error deleting mapping: " + error.message, "error");
+            }
+        }
+        async function deleteMenuItem(restaurantId, menuId) {
+            try {
+                await deleteDoc(doc(db, "restaurant", restaurantId, "menu", menuId));
+                showNotification("Menu item deleted!");
+                loadMenus();
+            } catch (error) {
+                showNotification("Error deleting menu item: " + error.message, "error");
+            }
+        }
+        async function deleteOrder(id) {
+            try {
+                await deleteDoc(doc(db, "orders", id));
+                showNotification("Order deleted!");
+            } catch (error) {
+                showNotification("Error deleting order: " + error.message, "error");
+            }
+        }
+        async function deleteUser(id) {
+            try {
+                await deleteDoc(doc(db, "users", id));
+                showNotification("User deleted!");
+                loadUsers();
+            } catch (error) {
+                showNotification("Error deleting user: " + error.message, "error");
+            }
+        }
+        async function deleteCart(id) {
+            try {
+                await deleteDoc(doc(db, "cart", id));
+                showNotification("Cart deleted!");
+                loadCarts();
+            } catch (error) {
+                showNotification("Error deleting cart: " + error.message, "error");
+            }
+        }
+        async function deleteSetting(id) {
+            try {
+                await deleteDoc(doc(db, "settings", id));
+                showNotification("Setting deleted!");
+                loadSettings();
+            } catch (error) {
+                showNotification("Error deleting setting: " + error.message, "error");
+            }
+        }
+
+        // Form Submissions
+        document.getElementById("restaurant-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            try {
+                const name = document.getElementById("restaurant-name").value;
+                const image = document.getElementById("restaurant-image").value;
+                const docRef = await addDoc(collection(db, "restaurant"), { name, image, isOpen: false });
+                showNotification(`Restaurant added with ID: ${docRef.id}`);
+                document.getElementById("restaurant-name").value = "";
+                document.getElementById("restaurant-image").value = "";
+                loadRestaurants();
+            } catch (error) {
+                showNotification("Error adding restaurant: " + error.message, "error");
+            }
+        });
+
+        document.getElementById("vendor-mapping-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            try {
+                const email = document.getElementById("vendor-email").value;
+                const restaurantId = document.getElementById("vendor-restaurant-id").value;
+                await setDoc(doc(db, "vendorMappings", email), { restaurantId });
+                showNotification("Vendor mapping added!");
+                document.getElementById("vendor-email").value = "";
+                document.getElementById("vendor-restaurant-id").value = "";
+                loadVendorMappings();
+            } catch (error) {
+                showNotification("Error adding mapping: " + error.message, "error");
+            }
+        });
+
+        document.getElementById("menu-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            try {
+                const restaurantId = document.getElementById("menu-restaurant-id").value;
+                const name = document.getElementById("menu-name").value;
+                const price = parseFloat(document.getElementById("menu-price").value);
+                if (!restaurantId || !name || isNaN(price)) return showNotification("Fill all fields!", "error");
+                await addDoc(collection(db, "restaurant", restaurantId, "menu"), { name, price, sizes: [], extras: [] });
+                showNotification("Menu item added!");
+                document.getElementById("menu-restaurant-id").value = "";
+                document.getElementById("menu-name").value = "";
+                document.getElementById("menu-price").value = "";
+                loadMenus();
+            } catch (error) {
+                showNotification("Error adding menu item: " + error.message, "error");
+            }
+        });
+
+        document.getElementById("settings-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            try {
+                const key = document.getElementById("settings-key").value;
+                const value = document.getElementById("settings-value").value;
+                await setDoc(doc(db, "settings", key), { value });
+                showNotification("Setting updated!");
+                document.getElementById("settings-key").value = "";
+                document.getElementById("settings-value").value = "";
+                loadSettings();
+            } catch (error) {
+                showNotification("Error updating setting: " + error.message, "error");
+            }
+        });
+
+        // Authentication
+        document.getElementById("login-btn").addEventListener("click", async () => {
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                if (adminEmails.includes(user.email)) {
+                    document.getElementById("login-section").classList.add("hidden");
+                    document.getElementById("main-content").classList.remove("hidden");
+                    setTimeout(() => {
+                        loadRestaurants();
+                        loadVendorMappings();
+                        loadMenus();
+                        loadOrders();
+                        loadUsers();
+                        loadCarts();
+                        loadSettings();
+                    }, 500); // Delay to ensure auth propagates
+                } else {
+                    await signOut(auth);
+                    showNotification("Unauthorized: Not an admin!", "error");
+                }
+            } catch (error) {
+                console.log("Login error:", error.code, error.message);
+                showNotification("Login failed: " + error.message, "error");
+            }
+        });
+
+        document.getElementById("logout-btn").addEventListener("click", async () => {
+            try {
+                await signOut(auth);
+                document.getElementById("main-content").classList.add("hidden");
+                document.getElementById("login-section").classList.remove("hidden");
+                showNotification("Logged out successfully!");
+            } catch (error) {
+                showNotification("Error logging out: " + error.message, "error");
+            }
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            console.log("Auth state changed:", user ? user.email : "No user");
+            if (user && adminEmails.includes(user.email)) {
+                document.getElementById("login-section").classList.add("hidden");
+                document.getElementById("main-content").classList.remove("hidden");
+                setTimeout(() => {
+                    loadRestaurants();
+                    loadVendorMappings();
+                    loadMenus();
+                    loadOrders();
+                    loadUsers();
+                    loadCarts();
+                    loadSettings();
+                }, 500); // Delay to ensure auth propagates
+            } else {
+                document.getElementById("main-content").classList.add("hidden");
+                document.getElementById("login-section").classList.remove("hidden");
+                if (user) showNotification("Unauthorized: Not an admin!", "error");
+            }
+        });
+
+        // Navigation
+        document.getElementById("restaurants-btn").addEventListener("click", () => { toggleSection("restaurants"); loadRestaurants(); });
+        document.getElementById("vendor-mappings-btn").addEventListener("click", () => { toggleSection("vendor-mappings"); loadVendorMappings(); });
+        document.getElementById("menus-btn").addEventListener("click", () => { toggleSection("menus"); loadMenus(); });
+        document.getElementById("orders-btn").addEventListener("click", () => { toggleSection("orders"); loadOrders(); });
+        document.getElementById("users-btn").addEventListener("click", () => { toggleSection("users"); loadUsers(); });
+        document.getElementById("carts-btn").addEventListener("click", () => { toggleSection("carts"); loadCarts(); });
+        document.getElementById("settings-btn").addEventListener("click", () => { toggleSection("settings"); loadSettings(); });
+    </script>
+</body>
+</html>
