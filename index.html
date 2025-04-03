@@ -260,12 +260,50 @@
         #login-section.hidden { 
             display: none; 
         }
+        .user-item {
+            background: #2c2c2e;
+            padding: 20px;
+            border-radius: 14px;
+            margin-bottom: 15px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 15px;
+            align-items: center;
+        }
+        .user-item:hover {
+            transform: translate ILLY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+        .user-details {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .user-details h4 {
+            margin: 0;
+            font-size: clamp(1rem, 2.5vw, 1.25rem);
+            font-weight: 600;
+            color: #ffffff;
+        }
+        .user-details p {
+            margin: 0;
+            font-size: clamp(0.85rem, 2vw, 0.95rem);
+            color: #d0d0d0;
+            word-break: break-word;
+        }
+        .user-actions {
+            display: flex;
+            gap: 10px;
+        }
         @media (max-width: 768px) {
             .container { padding: 20px 15px; }
             .section { padding: 25px; }
             .footer-nav { padding: 8px; gap: 10px; }
             .footer-nav button { padding: 6px 10px; min-width: 55px; }
             #login-section .login-container { padding: 30px; }
+            .user-item { grid-template-columns: 1fr; }
+            .user-actions { margin-top: 10px; justify-content: flex-end; }
         }
         @media (max-width: 480px) {
             .container { padding: 15px 10px; }
@@ -308,7 +346,13 @@
     </style>
 </head>
 <body>
-    <div id="login-section" class="section">
+    <!-- Loading screen with "Chawp" centered -->
+    <div id="loading-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1c1c1e; display: flex; align-items: center; justify-content: center; z-index: 3000;">
+        <h1 style="font-size: 3rem; font-weight: 600; letter-spacing: -2px; background: linear-gradient(45deg, #007aff, #34c759, #007aff); -webkit-background-clip: text; background-clip: text; color: transparent;">Chawp</h1>
+    </div>
+
+    <!-- Login section (hidden by default) -->
+    <div id="login-section" class="section" style="display: none;">
         <div class="login-container">
             <h1>Admin Portal</h1>
             <input type="email" id="email" placeholder="Email" class="input">
@@ -317,6 +361,7 @@
         </div>
     </div>
 
+    <!-- Main content (hidden until auth resolves) -->
     <div id="main-content" class="container hidden">
         <h1 class="text-4xl font-semibold text-center mb-4">Chawp Admin Portal</h1>
         <p class="text-center text-gray-400 mb-12">Oversee the entire Chawp ecosystem.</p>
@@ -378,7 +423,7 @@
                 <button type="submit" class="btn w-full">Update Setting</button>
             </form>
             <button id="logout-btn" class="btn btn-secondary w-full mt-2">Logout</button>
-            <div id="settings-list"></div>
+            
         </div>
 
         <!-- Footer Navigation -->
@@ -416,401 +461,330 @@
         const auth = getAuth(app);
         const adminEmails = ["admin@gmail.com"]; // Replace with your actual admin email
 
-        // Set session persistence (survives page reloads, ends on tab close)
-        setPersistence(auth, browserSessionPersistence)
-            .then(() => console.log("Auth persistence set to session"))
-            .catch((error) => console.error("Error setting persistence:", error));
+        // Set session persistence
+        setPersistence(auth, browserSessionPersistence);
 
+        // Cache DOM elements
+        const loadingScreen = document.getElementById("loading-screen");
+        const loginSection = document.getElementById("login-section");
+        const mainContent = document.getElementById("main-content");
+        const notification = document.getElementById("notification");
+        const restaurantList = document.getElementById("restaurant-list");
+        const vendorMappingList = document.getElementById("vendor-mapping-list");
+        const menuList = document.getElementById("menu-list");
+        const ordersList = document.getElementById("orders-list");
+        const usersList = document.getElementById("users-list");
+        const settingsList = document.getElementById("settings-list");
+
+        // Fast notification function
         function showNotification(message, type = "success") {
-            const notification = document.getElementById("notification");
             notification.textContent = message;
-            notification.className = `notification ${type === "error" ? "error" : ""}`;
-            notification.classList.add("show");
+            notification.className = `notification ${type === "error" ? "error" : ""} show`;
             setTimeout(() => notification.classList.remove("show"), 3000);
         }
 
+        // Efficient section toggling
         function toggleSection(sectionId) {
             const sections = ["restaurants", "vendor-mappings", "menus", "orders", "users", "settings"];
             sections.forEach(id => {
                 document.getElementById(id).classList.toggle("hidden", id !== sectionId);
-            });
-            const buttons = document.querySelectorAll(".footer-nav button");
-            buttons.forEach(btn => {
-                btn.classList.toggle("active", btn.id === `${sectionId}-btn`);
+                document.getElementById(`${id}-btn`).classList.toggle("active", id === sectionId);
             });
         }
 
+        // Load data functions
         async function loadRestaurants() {
-            try {
-                const restaurantList = document.getElementById("restaurant-list");
-                const querySnapshot = await getDocs(collection(db, "restaurant"));
-                let output = "";
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    output += `
-                        <div class="item">
-                            <h4>${data.name || "Unnamed"}</h4>
-                            <p>ID: ${doc.id}</p>
-                            <p>Image: ${data.image || "None"}</p>
-                            <p>Status: ${data.isOpen ? "Open" : "Closed"}</p>
-                            <button class="btn btn-secondary delete-restaurant" data-id="${doc.id}">Delete</button>
-                        </div>
-                    `;
+            const querySnapshot = await getDocs(collection(db, "restaurant"));
+            const fragment = document.createDocumentFragment();
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                const item = document.createElement("div");
+                item.className = "item";
+                item.innerHTML = `
+                    <h4>${data.name || "Unnamed"}</h4>
+                    <p>ID: ${doc.id}</p>
+                    <p>Image: ${data.image || "None"}</p>
+                    <p>Status: ${data.isOpen ? "Open" : "Closed"}</p>
+                    <button class="btn btn-secondary delete-restaurant" data-id="${doc.id}">Delete</button>
+                `;
+                item.querySelector(".delete-restaurant").addEventListener("click", () => {
+                    if (confirm(`Are you sure you want to delete restaurant ID: ${doc.id}?`)) deleteRestaurant(doc.id);
                 });
-                restaurantList.innerHTML = output || "<p class='text-gray-400'>No restaurants found.</p>";
-                restaurantList.querySelectorAll(".delete-restaurant").forEach(btn => {
-                    btn.addEventListener("click", () => {
-                        if (confirm(`Are you sure you want to delete restaurant ID: ${btn.dataset.id}?`)) {
-                            deleteRestaurant(btn.dataset.id);
-                        }
-                    });
-                });
-            } catch (error) {
-                showNotification("Error loading restaurants: " + error.message, "error");
-            }
+                fragment.appendChild(item);
+            });
+            restaurantList.innerHTML = "";
+            restaurantList.appendChild(fragment);
+            if (!querySnapshot.size) restaurantList.innerHTML = "<p class='text-gray-400'>No restaurants found.</p>";
         }
 
         async function loadVendorMappings() {
-            try {
-                const mappingList = document.getElementById("vendor-mapping-list");
-                const querySnapshot = await getDocs(collection(db, "vendorMappings"));
-                let output = "";
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    output += `
-                        <div class="item">
-                            <h4>${doc.id}</h4>
-                            <p>Restaurant ID: ${data.restaurantId}</p>
-                            <button class="btn btn-secondary delete-mapping" data-id="${doc.id}">Delete</button>
-                        </div>
-                    `;
+            const querySnapshot = await getDocs(collection(db, "vendorMappings"));
+            const fragment = document.createDocumentFragment();
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                const item = document.createElement("div");
+                item.className = "item";
+                item.innerHTML = `
+                    <h4>${doc.id}</h4>
+                    <p>Restaurant ID: ${data.restaurantId}</p>
+                    <button class="btn btn-secondary delete-mapping" data-id="${doc.id}">Delete</button>
+                `;
+                item.querySelector(".delete-mapping").addEventListener("click", () => {
+                    if (confirm(`Are you sure you want to delete vendor mapping for email: ${doc.id}?`)) deleteVendorMapping(doc.id);
                 });
-                mappingList.innerHTML = output || "<p class='text-gray-400'>No mappings found.</p>";
-                mappingList.querySelectorAll(".delete-mapping").forEach(btn => {
-                    btn.addEventListener("click", () => {
-                        if (confirm(`Are you sure you want to delete vendor mapping for email: ${btn.dataset.id}?`)) {
-                            deleteVendorMapping(btn.dataset.id);
-                        }
-                    });
-                });
-            } catch (error) {
-                showNotification("Error loading vendor mappings: " + error.message, "error");
-            }
+                fragment.appendChild(item);
+            });
+            vendorMappingList.innerHTML = "";
+            vendorMappingList.appendChild(fragment);
+            if (!querySnapshot.size) vendorMappingList.innerHTML = "<p class='text-gray-400'>No mappings found.</p>";
         }
 
         async function loadMenus() {
-            try {
-                const menuList = document.getElementById("menu-list");
-                const restaurants = await getDocs(collection(db, "restaurant"));
-                let output = "";
-                for (const restaurant of restaurants.docs) {
-                    const menuSnapshot = await getDocs(collection(db, "restaurant", restaurant.id, "menu"));
-                    menuSnapshot.forEach(doc => {
-                        const data = doc.data();
-                        output += `
-                            <div class="item">
-                                <h4>${data.name}</h4>
-                                <p>Restaurant: ${restaurant.id}</p>
-                                <p>Price: GH₵${data.price.toFixed(2)}</p>
-                                <button class="btn btn-secondary delete-menu" data-restaurant="${restaurant.id}" data-id="${doc.id}">Delete</button>
-                            </div>
-                        `;
+            const restaurants = await getDocs(collection(db, "restaurant"));
+            const fragment = document.createDocumentFragment();
+            for (const restaurant of restaurants.docs) {
+                const menuSnapshot = await getDocs(collection(db, "restaurant", restaurant.id, "menu"));
+                menuSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const item = document.createElement("div");
+                    item.className = "item";
+                    item.innerHTML = `
+                        <h4>${data.name}</h4>
+                        <p>Restaurant: ${restaurant.id}</p>
+                        <p>Price: GH₵${data.price.toFixed(2)}</p>
+                        <button class="btn btn-secondary delete-menu" data-restaurant="${restaurant.id}" data-id="${doc.id}">Delete</button>
+                    `;
+                    item.querySelector(".delete-menu").addEventListener("click", () => {
+                        if (confirm(`Are you sure you want to delete menu item ID: ${doc.id} from restaurant: ${restaurant.id}?`)) deleteMenuItem(restaurant.id, doc.id);
                     });
-                }
-                menuList.innerHTML = output || "<p class='text-gray-400'>No menu items found.</p>";
-                menuList.querySelectorAll(".delete-menu").forEach(btn => {
-                    btn.addEventListener("click", () => {
-                        if (confirm(`Are you sure you want to delete menu item ID: ${btn.dataset.id} from restaurant: ${btn.dataset.restaurant}?`)) {
-                            deleteMenuItem(btn.dataset.restaurant, btn.dataset.id);
-                        }
-                    });
+                    fragment.appendChild(item);
                 });
-            } catch (error) {
-                showNotification("Error loading menus: " + error.message, "error");
             }
+            menuList.innerHTML = "";
+            menuList.appendChild(fragment);
+            if (!fragment.childElementCount) menuList.innerHTML = "<p class='text-gray-400'>No menu items found.</p>";
         }
 
         function loadOrders() {
-            const ordersList = document.getElementById("orders-list");
             onSnapshot(collection(db, "orders"), (snapshot) => {
-                let output = "";
+                const fragment = document.createDocumentFragment();
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const items = data.items?.map(item => `${item.quantity}x ${item.name}`).join(", ") || "N/A";
-                    output += `
-                        <div class="item">
-                            <h4>Order ID: ${doc.id}</h4>
-                            <p>Restaurant: ${data.restaurantId}</p>
-                            <p>Items: ${items}</p>
-                            <p>Total: GH₵${data.totalAmount.toFixed(2)}</p>
-                            <p>Status: ${data.status}</p>
-                            <p>Time: ${new Date(data.timestamp).toLocaleString()}</p>
-                            <button class="btn btn-secondary delete-order" data-id="${doc.id}">Delete</button>
-                        </div>
+                    const item = document.createElement("div");
+                    item.className = "item";
+                    item.innerHTML = `
+                        <h4>Order ID: ${doc.id}</h4>
+                        <p>Restaurant: ${data.restaurantId}</p>
+                        <p>Items: ${items}</p>
+                        <p>Total: GH₵${data.totalAmount.toFixed(2)}</p>
+                        <p>Status: ${data.status}</p>
+                        <p>Time: ${new Date(data.timestamp).toLocaleString()}</p>
+                        <button class="btn btn-secondary delete-order" data-id="${doc.id}">Delete</button>
                     `;
-                });
-                ordersList.innerHTML = output || "<p class='text-gray-400'>No orders found.</p>";
-                ordersList.querySelectorAll(".delete-order").forEach(btn => {
-                    btn.addEventListener("click", () => {
-                        if (confirm(`Are you sure you want to delete order ID: ${btn.dataset.id}?`)) {
-                            deleteOrder(btn.dataset.id);
-                        }
+                    item.querySelector(".delete-order").addEventListener("click", () => {
+                        if (confirm(`Are you sure you want to delete order ID: ${doc.id}?`)) deleteOrder(doc.id);
                     });
+                    fragment.appendChild(item);
                 });
-            }, (error) => {
-                console.error("Orders snapshot error:", error);
-                ordersList.innerHTML = "<p class='text-gray-400'>Error loading orders.</p>";
-                showNotification("Error loading orders: " + error.message, "error");
+                ordersList.innerHTML = "";
+                ordersList.appendChild(fragment);
+                if (!snapshot.size) ordersList.innerHTML = "<p class='text-gray-400'>No orders found.</p>";
             });
         }
 
         async function loadUsers() {
-            try {
-                const usersList = document.getElementById("users-list");
-                const querySnapshot = await getDocs(collection(db, "users"));
-                let output = "";
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    output += `
-                        <div class="item">
-                            <h4>User ID: ${doc.id}</h4>
-                            <p>Data: ${JSON.stringify(data)}</p>
-                            <button class="btn btn-secondary delete-user" data-id="${doc.id}">Delete</button>
-                        </div>
-                    `;
+            const querySnapshot = await getDocs(collection(db, "users"));
+            const fragment = document.createDocumentFragment();
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                const item = document.createElement("div");
+                item.className = "user-item";
+                item.innerHTML = `
+                    <div class="user-details">
+                        <h4>User ID: ${doc.id}</h4>
+                        <p>${JSON.stringify(data, null, 2)
+                            .replace(/"/g, '')
+                            .replace(/{/g, '')
+                            .replace(/}/g, '')
+                            .replace(/,/g, '')
+                            .split('\n')
+                            .map(line => line.trim())
+                            .filter(line => line)
+                            .join('<br>')}</p>
+                    </div>
+                    <div class="user-actions">
+                        <button class="btn btn-secondary delete-user" data-id="${doc.id}">Delete</button>
+                    </div>
+                `;
+                item.querySelector(".delete-user").addEventListener("click", () => {
+                    if (confirm(`Are you sure you want to delete user ID: ${doc.id}?`)) deleteUser(doc.id);
                 });
-                usersList.innerHTML = output || "<p class='text-gray-400'>No users found.</p>";
-                usersList.querySelectorAll(".delete-user").forEach(btn => {
-                    btn.addEventListener("click", () => {
-                        if (confirm(`Are you sure you want to delete user ID: ${btn.dataset.id}?`)) {
-                            deleteUser(btn.dataset.id);
-                        }
-                    });
-                });
-            } catch (error) {
-                showNotification("Error loading users: " + error.message, "error");
-            }
+                fragment.appendChild(item);
+            });
+            usersList.innerHTML = "";
+            usersList.appendChild(fragment);
+            if (!querySnapshot.size) usersList.innerHTML = "<p class='text-gray-400'>No users found.</p>";
         }
 
         async function loadSettings() {
-            try {
-                const settingsList = document.getElementById("settings-list");
-                const querySnapshot = await getDocs(collection(db, "settings"));
-                let output = "";
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    output += `
-                        <div class="item">
-                            <h4>${doc.id}</h4>
-                            <p>Value: ${data.value}</p>
-                            <button class="btn btn-secondary delete-setting" data-id="${doc.id}">Delete</button>
-                        </div>
-                    `;
+            const querySnapshot = await getDocs(collection(db, "settings"));
+            const fragment = document.createDocumentFragment();
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                const item = document.createElement("div");
+                item.className = "item";
+                item.innerHTML = `
+                    <h4>${doc.id}</h4>
+                    <p>Value: ${data.value}</p>
+                    <button class="btn btn-secondary delete-setting" data-id="${doc.id}">Delete</button>
+                `;
+                item.querySelector(".delete-setting").addEventListener("click", () => {
+                    if (confirm(`Are you sure you want to delete setting: ${doc.id}?`)) deleteSetting(doc.id);
                 });
-                settingsList.innerHTML = output || "<p class='text-gray-400'>No settings found.</p>";
-                settingsList.querySelectorAll(".delete-setting").forEach(btn => {
-                    btn.addEventListener("click", () => {
-                        if (confirm(`Are you sure you want to delete setting: ${btn.dataset.id}?`)) {
-                            deleteSetting(btn.dataset.id);
-                        }
-                    });
-                });
-            } catch (error) {
-                showNotification("Error loading settings: " + error.message, "error");
-            }
+                fragment.appendChild(item);
+            });
+            settingsList.innerHTML = "";
+            settingsList.appendChild(fragment);
+            if (!querySnapshot.size) settingsList.innerHTML = "<p class='text-gray-400'>No settings found.</p>";
         }
 
-        // Delete Functions
+        // Delete functions
         async function deleteRestaurant(id) {
-            try {
-                await deleteDoc(doc(db, "restaurant", id));
-                showNotification("Restaurant deleted!");
-                loadRestaurants();
-            } catch (error) {
-                showNotification("Error deleting restaurant: " + error.message, "error");
-            }
-        }
-        async function deleteVendorMapping(id) {
-            try {
-                await deleteDoc(doc(db, "vendorMappings", id));
-                showNotification("Mapping deleted!");
-                loadVendorMappings();
-            } catch (error) {
-                showNotification("Error deleting mapping: " + error.message, "error");
-            }
-        }
-        async function deleteMenuItem(restaurantId, menuId) {
-            try {
-                await deleteDoc(doc(db, "restaurant", restaurantId, "menu", menuId));
-                showNotification("Menu item deleted!");
-                loadMenus();
-            } catch (error) {
-                showNotification("Error deleting menu item: " + error.message, "error");
-            }
-        }
-        async function deleteOrder(id) {
-            try {
-                await deleteDoc(doc(db, "orders", id));
-                showNotification("Order deleted!");
-            } catch (error) {
-                showNotification("Error deleting order: " + error.message, "error");
-            }
-        }
-        async function deleteUser(id) {
-            try {
-                await deleteDoc(doc(db, "users", id));
-                showNotification("User deleted!");
-                loadUsers();
-            } catch (error) {
-                showNotification("Error deleting user: " + error.message, "error");
-            }
-        }
-        async function deleteSetting(id) {
-            try {
-                await deleteDoc(doc(db, "settings", id));
-                showNotification("Setting deleted!");
-                loadSettings();
-            } catch (error) {
-                showNotification("Error deleting setting: " + error.message, "error");
-            }
+            await deleteDoc(doc(db, "restaurant", id));
+            showNotification("Restaurant deleted!");
+            loadRestaurants();
         }
 
-        // Form Submissions
+        async function deleteVendorMapping(id) {
+            await deleteDoc(doc(db, "vendorMappings", id));
+            showNotification("Mapping deleted!");
+            loadVendorMappings();
+        }
+
+        async function deleteMenuItem(restaurantId, menuId) {
+            await deleteDoc(doc(db, "restaurant", restaurantId, "menu", menuId));
+            showNotification("Menu item deleted!");
+            loadMenus();
+        }
+
+        async function deleteOrder(id) {
+            await deleteDoc(doc(db, "orders", id));
+            showNotification("Order deleted!");
+        }
+
+        async function deleteUser(id) {
+            await deleteDoc(doc(db, "users", id));
+            showNotification("User deleted!");
+            loadUsers();
+        }
+
+        async function deleteSetting(id) {
+            await deleteDoc(doc(db, "settings", id));
+            showNotification("Setting deleted!");
+            loadSettings();
+        }
+
+        // Form submissions
         document.getElementById("restaurant-form").addEventListener("submit", async (e) => {
             e.preventDefault();
-            try {
-                const name = document.getElementById("restaurant-name").value;
-                const image = document.getElementById("restaurant-image").value;
-                const docRef = await addDoc(collection(db, "restaurant"), { name, image, isOpen: false });
-                showNotification(`Restaurant added with ID: ${docRef.id}`);
-                document.getElementById("restaurant-name").value = "";
-                document.getElementById("restaurant-image").value = "";
-                loadRestaurants();
-            } catch (error) {
-                showNotification("Error adding restaurant: " + error.message, "error");
-            }
+            const name = document.getElementById("restaurant-name").value;
+            const image = document.getElementById("restaurant-image").value;
+            const docRef = await addDoc(collection(db, "restaurant"), { name, image, isOpen: false });
+            showNotification(`Restaurant added with ID: ${docRef.id}`);
+            document.getElementById("restaurant-name").value = "";
+            document.getElementById("restaurant-image").value = "";
+            loadRestaurants();
         });
 
         document.getElementById("vendor-mapping-form").addEventListener("submit", async (e) => {
             e.preventDefault();
-            try {
-                const email = document.getElementById("vendor-email").value;
-                const restaurantId = document.getElementById("vendor-restaurant-id").value;
-                await setDoc(doc(db, "vendorMappings", email), { restaurantId });
-                showNotification("Vendor mapping added!");
-                document.getElementById("vendor-email").value = "";
-                document.getElementById("vendor-restaurant-id").value = "";
-                loadVendorMappings();
-            } catch (error) {
-                showNotification("Error adding mapping: " + error.message, "error");
-            }
+            const email = document.getElementById("vendor-email").value;
+            const restaurantId = document.getElementById("vendor-restaurant-id").value;
+            await setDoc(doc(db, "vendorMappings", email), { restaurantId });
+            showNotification("Vendor mapping added!");
+            document.getElementById("vendor-email").value = "";
+            document.getElementById("vendor-restaurant-id").value = "";
+            loadVendorMappings();
         });
 
         document.getElementById("menu-form").addEventListener("submit", async (e) => {
             e.preventDefault();
-            try {
-                const restaurantId = document.getElementById("menu-restaurant-id").value;
-                const name = document.getElementById("menu-name").value;
-                const price = parseFloat(document.getElementById("menu-price").value);
-                if (!restaurantId || !name || isNaN(price)) return showNotification("Fill all fields!", "error");
-                await addDoc(collection(db, "restaurant", restaurantId, "menu"), { name, price, sizes: [], extras: [] });
-                showNotification("Menu item added!");
-                document.getElementById("menu-restaurant-id").value = "";
-                document.getElementById("menu-name").value = "";
-                document.getElementById("menu-price").value = "";
-                loadMenus();
-            } catch (error) {
-                showNotification("Error adding menu item: " + error.message, "error");
-            }
+            const restaurantId = document.getElementById("menu-restaurant-id").value;
+            const name = document.getElementById("menu-name").value;
+            const price = parseFloat(document.getElementById("menu-price").value);
+            if (!restaurantId || !name || isNaN(price)) return showNotification("Fill all fields!", "error");
+            await addDoc(collection(db, "restaurant", restaurantId, "menu"), { name, price, sizes: [], extras: [] });
+            showNotification("Menu item added!");
+            document.getElementById("menu-restaurant-id").value = "";
+            document.getElementById("menu-name").value = "";
+            document.getElementById("menu-price").value = "";
+            loadMenus();
         });
 
         document.getElementById("settings-form").addEventListener("submit", async (e) => {
             e.preventDefault();
-            try {
-                const key = document.getElementById("settings-key").value;
-                const value = document.getElementById("settings-value").value;
-                await setDoc(doc(db, "settings", key), { value });
-                showNotification("Setting updated!");
-                document.getElementById("settings-key").value = "";
-                document.getElementById("settings-value").value = "";
-                loadSettings();
-            } catch (error) {
-                showNotification("Error updating setting: " + error.message, "error");
-            }
+            const key = document.getElementById("settings-key").value;
+            const value = document.getElementById("settings-value").value;
+            await setDoc(doc(db, "settings", key), { value });
+            showNotification("Setting updated!");
+            document.getElementById("settings-key").value = "";
+            document.getElementById("settings-value").value = "";
+            loadSettings();
         });
 
         // Authentication
-        let authInitialized = false;
-
-        document.getElementById("login-btn").addEventListener("click", async () => {
-            const email = document.getElementById("email").value.trim();
-            const password = document.getElementById("password").value;
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
-                if (adminEmails.includes(user.email)) {
-                    document.getElementById("login-section").classList.add("hidden");
-                    document.getElementById("main-content").classList.remove("hidden");
-                    loadAllData();
-                } else {
-                    await signOut(auth);
-                    showNotification("Unauthorized: Not an admin!", "error");
-                }
-            } catch (error) {
-                console.error("Login error:", error.code, error.message);
-                showNotification("Login failed: " + error.message, "error");
-            }
-        });
-
-        document.getElementById("logout-btn").addEventListener("click", async () => {
-            if (confirm("Are you sure you want to logout?")) {
-                try {
-                    await signOut(auth);
-                    document.getElementById("main-content").classList.add("hidden");
-                    document.getElementById("login-section").classList.remove("hidden");
-                    showNotification("Logged out successfully!");
-                } catch (error) {
-                    showNotification("Error logging out: " + error.message, "error");
-                }
-            }
-        });
-
-        function loadAllData() {
-            setTimeout(() => {
+        onAuthStateChanged(auth, (user) => {
+            if (user && adminEmails.includes(user.email)) {
+                loadingScreen.style.display = "none";
+                loginSection.style.display = "none";
+                mainContent.classList.remove("hidden");
                 loadRestaurants();
                 loadVendorMappings();
                 loadMenus();
                 loadOrders();
                 loadUsers();
                 loadSettings();
-            }, 500);
-        }
-
-        onAuthStateChanged(auth, (user) => {
-            console.log("Auth state changed:", user ? user.email : "No user");
-            if (!authInitialized) {
-                authInitialized = true; // Only log initial state
-                if (user && adminEmails.includes(user.email)) {
-                    document.getElementById("login-section").classList.add("hidden");
-                    document.getElementById("main-content").classList.remove("hidden");
-                    loadAllData();
-                } else {
-                    document.getElementById("main-content").classList.add("hidden");
-                    document.getElementById("login-section").classList.remove("hidden");
-                    if (user && !adminEmails.includes(user.email)) {
-                        signOut(auth);
-                        showNotification("Unauthorized: Not an admin!", "error");
-                    }
-                }
-            } else if (user && adminEmails.includes(user.email)) {
-                // Do nothing if already authenticated and admin
             } else {
-                document.getElementById("main-content").classList.add("hidden");
-                document.getElementById("login-section").classList.remove("hidden");
+                loadingScreen.style.display = "none";
+                loginSection.style.display = "flex";
+                mainContent.classList.add("hidden");
+                if (user) {
+                    signOut(auth);
+                    showNotification("Unauthorized: Not an admin!", "error");
+                }
             }
-        }, (error) => {
-            console.error("Auth state error:", error);
-            showNotification("Authentication error: " + error.message, "error");
+        });
+
+        document.getElementById("login-btn").addEventListener("click", async () => {
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value;
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                if (adminEmails.includes(userCredential.user.email)) {
+                    loadingScreen.style.display = "none";
+                    loginSection.style.display = "none";
+                    mainContent.classList.remove("hidden");
+                    loadRestaurants();
+                    loadVendorMappings();
+                    loadMenus();
+                    loadOrders();
+                    loadUsers();
+                    loadSettings();
+                } else {
+                    signOut(auth);
+                    showNotification("Unauthorized: Not an admin!", "error");
+                }
+            } catch (error) {
+                showNotification("Login failed: " + error.message, "error");
+            }
+        });
+
+        document.getElementById("logout-btn").addEventListener("click", async () => {
+            if (confirm("Are you sure you want to logout?")) {
+                await signOut(auth);
+                showNotification("Logged out successfully!");
+            }
         });
 
         // Navigation
@@ -820,7 +794,21 @@
         document.getElementById("orders-btn").addEventListener("click", () => { toggleSection("orders"); loadOrders(); });
         document.getElementById("users-btn").addEventListener("click", () => { toggleSection("users"); loadUsers(); });
         document.getElementById("settings-btn").addEventListener("click", () => { toggleSection("settings"); loadSettings(); });
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('Service Worker registration failed:', error);
+                    });
+            });
+        }
     </script>
-    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92a54af47ec212e5',t:'MTc0MzY0ODk4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-</body>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92a54af47ec212e5',t:'MTc0MzY0ODk4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName_score('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92a997e57a0444e2',t:'MTc0MzY5NDA4MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92a9a6238b55c0d2',t:'MTc0MzY5NDY2NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
