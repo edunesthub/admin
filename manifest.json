@@ -2,7 +2,7 @@
     "name": "Chawp Admin Portal",
     "short_name": "Chawp Admin",
     "description": "Admin portal for managing the Chawp ecosystem",
-    "start_url": "/",
+    "start_url": "https://admin.chawp.me/index.html",
     "display": "standalone",
     "background_color": "#1c1c1e",
     "theme_color": "#1c1c1e",
