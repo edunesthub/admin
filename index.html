@@ -68,29 +68,56 @@
             color: #d0d0d0; 
         }
         .btn { 
-            background: #007aff; 
-            color: #fff; 
-            padding: 12px 24px; 
-            border-radius: 14px; 
-            font-weight: 500; 
-            text-align: center; 
-            transition: background 0.2s ease, transform 0.2s ease; 
+            background: linear-gradient(45deg, #34c759, #007aff);
+            color: white;
             border: none; 
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
             cursor: pointer; 
             width: 100%; 
-            max-width: 300px; 
-            font-size: clamp(0.9rem, 2.5vw, 1rem); 
+            font-size: 16px;
+            transition: all 0.3s;
+        
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .btn:hover { 
-            background: #0062cc; 
+            background: linear-gradient(135deg, #34c759, #            background: linear-gradient(45deg, #34c759, #007aff);
+            );
             transform: translateY(-2px); 
+            box-shadow: 0 6px 15px rgba(255, 45, 85, 0.4);
+        }
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(45, 174, 255, 0.2);
+        }
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
         .btn-secondary { 
-            background: #ff3b30; 
+            background: #30c8ff; 
             padding: 8px 18px; 
         }
         .btn-secondary:hover { 
-            background: #dc2626; 
+            background: #26a5dc; 
         }
         .btn-edit { 
             background: #34c759; 
@@ -121,21 +148,30 @@
             top: 20px; 
             left: 50%; 
             transform: translateX(-50%); 
-            background: #34c759; 
-            padding: 12px 24px; 
-            border-radius: 14px; 
-            text-align: center; 
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); 
+            background: rgba(52, 199, 89, 0.9);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 10px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border-left: 4px solid #34C759;
             z-index: 1000; 
             opacity: 0; 
             transition: opacity 0.3s ease; 
-            font-size: clamp(0.9rem, 2.5vw, 1rem); 
         }
         .notification.show { 
             opacity: 1; 
         }
         .notification.error { 
-            background: #ff3b30; 
+            background: rgba(255, 59, 48, 0.9);
+            border-left-color: #FF3B30;
+        }
+        .notification-icon {
+            font-size: 18px;
         }
         .item { 
             background: #2c2c2e; 
@@ -594,6 +630,14 @@
             align-items: center;
             padding: 12px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .activity-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
+            border-radius: 6px;
+            padding-left: 10px;
         }
         .activity-item:last-child {
             border-bottom: none;
@@ -623,6 +667,28 @@
         .activity-time {
             font-size: 0.8rem;
             color: #a0a0a0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .activity-status {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        .status-pending {
+            background: rgba(255, 149, 0, 0.2);
+            color: #FF9500;
+        }
+        .status-completed {
+            background: rgba(52, 199, 89, 0.2);
+            color: #34C759;
+        }
+        .status-canceled {
+            background: rgba(255, 59, 48, 0.2);
+            color: #FF3B30;
         }
         .pulse {
             position: absolute;
@@ -656,24 +722,24 @@
             padding: 20px;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             height: auto;
-            max-height: 100px;
+            min-height: 200px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(10px);
         }
         .chart-container .chart-wrapper {
-            height: 15px; 
-            max-height: 15px; 
+            height: 140px; 
+            min-height: 140px;
             overflow: hidden;
-            border-radius: 5px;
+            border-radius: 8px;
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
             background: rgba(0,0,0,0.1);
             margin-top: 15px;
             position: relative;
         }
         .chart-container canvas {
-            height: 15px !important;
-            max-height: 15px !important;
+            height: 140px !important;
+            min-height: 140px !important;
             overflow: hidden;
         }
         .chart-header {
@@ -729,18 +795,19 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.85);
             z-index: 2000;
             justify-content: center;
             align-items: center;
             padding: 20px;
             animation: fadeIn 0.3s ease;
+            backdrop-filter: blur(6px);
         }
         #trend-overlay.active {
             display: flex;
         }
         .trend-content {
-            background: #2c2c2e;
+            background: linear-gradient(135deg, #2c2c2e, #1c1c1e);
             padding: 30px;
             border-radius: 20px;
             max-width: 800px;
@@ -749,29 +816,91 @@
             overflow-y: auto;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
             position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         .trend-content h4 {
             font-size: 1.5rem;
             font-weight: 600;
             margin-bottom: 20px;
             color: #ffffff;
-        }
-        .trend-content button {
-            background: #ff3b30;
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 14px;
-            font-weight: 500;
             text-align: center;
-            transition: background 0.2s ease;
+            position: relative;
+            display: inline-block;
+            padding-bottom: 10px;
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+        }
+        .trend-content h4:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #007aff, #5AC8FA);
+            border-radius: 3px;
+        }
+        .trend-chart-container {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 20px 0;
+            position: relative;
+            height: 250px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .trend-content canvas {
+            max-width: 100%;
+            height: 220px !important;
+            max-height: 220px !important;
+        }
+        .trend-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .trend-stat {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .trend-stat-label {
+            font-size: 0.9rem;
+            color: #a0a0a0;
+            margin-bottom: 5px;
+        }
+        .trend-stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
             border: none;
             cursor: pointer;
-            width: 100%;
-            max-width: 300px;
-            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .trend-content button:hover {
-            background: #dc2626;
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+        .close-btn i {
+            font-size: 1.1rem;
         }
         /* Custom Settings Styles */
         .settings-grid {
@@ -979,6 +1108,111 @@
         * {
             scrollbar-width: none;
         }
+        .btn-primary {
+            background: linear-gradient(135deg, #FF2D55, #FF9500);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            transition: all 0.3s;
+        
+            position: relative;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #FF1D45, #FF8500);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(45, 181, 255, 0.4);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(45, 125, 255, 0.2);
+        }
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        @keyframes spin {
+            to { transform: translateY(-50%) rotate(360deg); }
+        }
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #a0a0a0;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 10;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .password-toggle:hover {
+            color: #ffffff;
+        }
+        .notification-login {
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        .btn-spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 8px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #a0a0a0;
+            cursor: pointer;
+            z-index: 10;
+            padding: 8px;
+        }
+        .password-toggle:hover {
+            color: #ffffff;
+        }
     </style>
 </head>
 <body>
@@ -989,13 +1223,24 @@
 
     <!-- Login section (hidden by default) -->
     <div id="login-section" class="section" style="display: none;">
-        <div id="login-notification" class="notification" style="position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 2001; width: 80%; max-width: 400px;"></div>
         <div class="login-container">
             <h1>Admin Portal</h1>
+            <div id="login-notification" class="notification" style="position: relative; width: 100%; display: none;">
+                <i class="fas fa-info-circle notification-icon"></i>
+                <span id="login-notification-message"></span>
+            </div>
             <form id="login-form">
-                <input type="email" id="email" placeholder="Email" class="input">
-                <input type="password" id="password" placeholder="Password" class="input">
-                <button type="submit" id="login-btn" class="btn">Login</button>
+            <input type="email" id="email" placeholder="Email" class="input">
+                <div class="password-wrapper">
+            <input type="password" id="password" placeholder="Password" class="input">
+                    <button type="button" class="password-toggle" id="password-toggle">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <button type="submit" id="login-btn" class="btn">
+                    <span>Login</span>
+                    <span class="btn-spinner" id="login-spinner"></span>
+                </button>
             </form>
         </div>
     </div>
@@ -1210,8 +1455,15 @@
         <div id="trend-overlay">
             <div class="trend-content">
                 <h4 id="trend-title"></h4>
+                <button class="close-btn"><i class="fas fa-times"></i></button>
+                
+                <div class="trend-summary" id="trend-summary"></div>
+                
+                <div class="trend-chart-container">
                 <canvas id="trend-chart"></canvas>
-                <button class="close-btn">Close</button>
+                </div>
+                
+                <div id="trend-description" class="text-center text-gray-400 mt-4" style="font-size: 0.9rem;"></div>
             </div>
         </div>
 
@@ -1253,12 +1505,29 @@
         // Set session persistence
         setPersistence(auth, browserLocalPersistence).catch(error => console.error("Persistence error:", error));
 
+        // Password toggle functionality
+        const passwordToggle = document.getElementById('password-toggle');
+        const passwordInput = document.getElementById('password');
+        
+        if (passwordToggle && passwordInput) {
+            passwordToggle.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                // Toggle icon
+                this.querySelector('i').classList.toggle('fa-eye');
+                this.querySelector('i').classList.toggle('fa-eye-slash');
+            });
+        }
+
         // Cache DOM elements
         const loadingScreen = document.getElementById("loading-screen");
         const loginSection = document.getElementById("login-section");
         const mainContent = document.getElementById("main-content");
         const notification = document.getElementById("notification");
         const loginNotification = document.getElementById("login-notification");
+        const loginForm = document.getElementById("login-form");
+        const loginBtn = document.getElementById("login-btn");
+        const loginSpinner = document.getElementById("login-spinner");
         const dashboardGrid = document.getElementById("dashboard-grid");
         const trendOverlay = document.getElementById("trend-overlay");
         const trendTitle = document.getElementById("trend-title");
@@ -1534,30 +1803,45 @@
                     const statRow = document.getElementById("stat-row");
                     statRow.innerHTML = "";
                     
-                    // Calculate week over week growth
-                    const calculateGrowth = (data) => {
-                        const thisWeek = data.slice(-7).reduce((a, b) => a + b, 0);
-                        const lastWeek = data.slice(-14, -7).reduce((a, b) => a + b, 0) || 1; // avoid division by zero
-                        return Math.round((thisWeek - lastWeek) / lastWeek * 100);
-                    };
+                    // Calculate meaningful statistics
+                    const todayOrders = trends.orders.data[trends.orders.data.length - 1];
+                    const yesterdayOrders = trends.orders.data[trends.orders.data.length - 2] || 0;
+                    const orderChangePercent = yesterdayOrders ? Math.round(((todayOrders - yesterdayOrders) / yesterdayOrders) * 100) : 0;
+                    
+                    const todayUsers = trends.users.data[trends.users.data.length - 1];
+                    const yesterdayUsers = trends.users.data[trends.users.data.length - 2] || 0;
+                    const userChangePercent = yesterdayUsers ? Math.round(((todayUsers - yesterdayUsers) / yesterdayUsers) * 100) : 0;
+                    
+                    const totalWeekOrders = trends.orders.data.reduce((sum, val) => sum + val, 0);
+                    const avgOrdersPerDay = totalWeekOrders ? Math.round(totalWeekOrders / trends.orders.data.filter(x => x > 0).length || 1) : 0;
                     
                     const stats = [
                         { 
-                            label: "Order Growth", 
-                            value: `${calculateGrowth(trends.orders.data)}%`, 
-                            icon: "fa-chart-line",
-                            class: calculateGrowth(trends.orders.data) >= 0 ? "growth-positive" : "growth-negative"
+                            label: "Today's Orders", 
+                            value: todayOrders, 
+                            icon: "fa-shopping-cart",
+                            change: `${orderChangePercent >= 0 ? '+' : ''}${orderChangePercent}% from yesterday`,
+                            class: orderChangePercent >= 0 ? "growth-positive" : "growth-negative"
                         },
                         { 
-                            label: "User Growth", 
-                            value: `${calculateGrowth(trends.users.data)}%`, 
-                            icon: "fa-chart-line",
-                            class: calculateGrowth(trends.users.data) >= 0 ? "growth-positive" : "growth-negative"
+                            label: "New Users Today", 
+                            value: todayUsers, 
+                            icon: "fa-user-plus",
+                            change: `${userChangePercent >= 0 ? '+' : ''}${userChangePercent}% from yesterday`,
+                            class: userChangePercent >= 0 ? "growth-positive" : "growth-negative"
                         },
                         { 
-                            label: "Active Today", 
-                            value: `${trends.orders.data[trends.orders.data.length - 1]} orders`, 
-                            icon: "fa-calendar-day",
+                            label: "Avg Orders/Day", 
+                            value: avgOrdersPerDay, 
+                            icon: "fa-calendar-check",
+                            change: "This week",
+                            class: "growth-neutral"
+                        },
+                        { 
+                            label: "Active Restaurants", 
+                            value: restaurantCount, 
+                            icon: "fa-store",
+                            change: "Total open for business",
                             class: "growth-neutral"
                         }
                     ];
@@ -1570,6 +1854,7 @@
                             <div class="stat-details">
                                 <div class="stat-label">${stat.label}</div>
                                 <div class="stat-value">${stat.value}</div>
+                                <div class="stat-change" style="font-size: 0.75rem; opacity: 0.8; margin-top: 2px;">${stat.change}</div>
                             </div>
                         `;
                         statRow.appendChild(item);
@@ -1588,6 +1873,14 @@
                     recentOrders.forEach(order => {
                         const timeAgo = formatTimeAgo(order.timestamp);
                         
+                        // Determine status styling
+                        let statusClass = 'status-pending';
+                        if (order.status === 'Completed') {
+                            statusClass = 'status-completed';
+                        } else if (order.status === 'Canceled') {
+                            statusClass = 'status-canceled';
+                        }
+                        
                         const item = document.createElement("div");
                         item.className = "activity-item";
                         item.innerHTML = `
@@ -1595,10 +1888,22 @@
                                 <i class="fas fa-shopping-cart"></i>
                             </div>
                             <div class="activity-details">
-                                <div class="activity-message">New order #${order.id.substring(0, 8)} - GH₵${order.totalAmount?.toFixed(2) || '0.00'}</div>
-                                <div class="activity-time">${timeAgo} - ${order.status || 'Pending'}</div>
+                                <div class="activity-message">Order #${order.id.substring(0, 8)} - GH₵${order.totalAmount?.toFixed(2) || '0.00'}</div>
+                                <div class="activity-time">
+                                    <span>${timeAgo}</span>
+                                    <div class="activity-status ${statusClass}">${order.status || 'Pending'}</div>
+                                </div>
                             </div>
                         `;
+                        
+                        // Make order clickable to navigate to orders section
+                        item.addEventListener('click', () => {
+                            toggleSection("orders");
+                            // Highlight the specific order if needed
+                            // This could be enhanced to scroll to the specific order
+                            loadOrders();
+                        });
+                        
                         activityFeed.appendChild(item);
                     });
                     
@@ -1606,7 +1911,7 @@
                     if (recentOrders.length > 0) {
                         const viewAll = document.createElement("div");
                         viewAll.className = "text-center mt-3";
-                        viewAll.innerHTML = `<button class="btn-secondary" style="background: rgba(255,255,255,0.1); padding: 8px 15px; margin-top: 10px; width: 100%;">View All Activity</button>`;
+                        viewAll.innerHTML = `<button class="btn-secondary" style="background: rgba(255,255,255,0.1); padding: 8px 15px; margin-top: 10px; width: 100%;">View All Orders</button>`;
                         viewAll.querySelector("button").addEventListener("click", () => {
                             toggleSection("orders");
                             loadOrders();
@@ -1671,9 +1976,10 @@
                                     borderColor: orderGradient,
                                     backgroundColor: 'rgba(255, 149, 0, 0.1)',
                                     borderWidth: 2,
-                                    pointRadius: 0,
+                                    pointRadius: 4,
+                                    pointBackgroundColor: '#FF9500',
                                     tension: 0.4,
-                                    fill: false
+                                    fill: true
                                 },
                                 {
                                     label: 'Users',
@@ -1681,35 +1987,77 @@
                                     borderColor: userGradient,
                                     backgroundColor: 'rgba(90, 200, 250, 0.1)',
                                     borderWidth: 2,
-                                    pointRadius: 0,
+                                    pointRadius: 4,
+                                    pointBackgroundColor: '#5AC8FA',
                                     tension: 0.4,
-                                    fill: false
+                                    fill: true
                                 }
                             ]
                         },
                         options: {
                             responsive: true,
-                            maintainAspectRatio: true,
-                            aspectRatio: 10,
+                            maintainAspectRatio: false,
                             plugins: {
                                 legend: {
-                                    display: false
+                                    display: true,
+                                    position: 'top',
+                                    labels: {
+                                        color: '#ffffff',
+                                        font: {
+                                            size: 12
+                                        },
+                                        usePointStyle: true,
+                                        padding: 15
+                                    }
                                 },
                                 tooltip: {
-                                    enabled: false
+                                    enabled: true,
+                                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                                    titleColor: '#ffffff',
+                                    bodyColor: '#ffffff',
+                                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                                    borderWidth: 1,
+                                    padding: 10,
+                                    displayColors: true,
+                                    usePointStyle: true,
+                                    callbacks: {
+                                        title: function(tooltipItems) {
+                                            return tooltipItems[0].label;
+                                        }
+                                    }
                                 }
                             },
                             scales: {
                                 y: { 
-                                    display: false,
-                                    beginAtZero: true
+                                    display: true,
+                                    beginAtZero: true,
+                                    grid: { 
+                                        color: 'rgba(255, 255, 255, 0.05)',
+                                        drawBorder: false
+                                    },
+                                    ticks: { 
+                                        color: '#a0a0a0',
+                                        padding: 10,
+                                        font: { size: 11 },
+                                        stepSize: 1
+                                    }
                                 },
                                 x: { 
-                                    display: false
+                                    display: true,
+                                    grid: { 
+                                        display: false,
+                                        drawBorder: false
+                                    },
+                                    ticks: { 
+                                        color: '#a0a0a0',
+                                        padding: 10,
+                                        font: { size: 11 }
+                                    }
                                 }
                             },
                             animation: {
-                                duration: 1000
+                                duration: 1500,
+                                easing: 'easeOutQuart'
                             }
                         }
                     });
@@ -1780,27 +2128,75 @@
                     const ctx = trendChartCanvas.getContext('2d');
                     const gradient = ctx.createLinearGradient(0, 0, ctx.canvas.width, 0);
                     
+                    let primaryColor, borderColor, bgColor;
+                    
                     switch(type) {
                         case 'restaurants':
                             gradient.addColorStop(0, '#FF9500');
                             gradient.addColorStop(1, '#FF2D55');
+                            primaryColor = '#FF9500';
+                            borderColor = '#FF2D55';
+                            bgColor = 'rgba(255, 149, 0, 0.1)';
                             break;
                         case 'vendors':
                             gradient.addColorStop(0, '#5AC8FA');
                             gradient.addColorStop(1, '#007AFF');
+                            primaryColor = '#5AC8FA';
+                            borderColor = '#007AFF';
+                            bgColor = 'rgba(90, 200, 250, 0.1)';
                             break;
                         case 'orders':
                             gradient.addColorStop(0, '#34C759');
                             gradient.addColorStop(1, '#32D74B');
+                            primaryColor = '#34C759';
+                            borderColor = '#32D74B';
+                            bgColor = 'rgba(52, 199, 89, 0.1)';
                             break;
                         case 'users':
                             gradient.addColorStop(0, '#AF52DE');
                             gradient.addColorStop(1, '#5E5CE6');
+                            primaryColor = '#AF52DE';
+                            borderColor = '#5E5CE6';
+                            bgColor = 'rgba(175, 82, 222, 0.1)';
                             break;
                         default:
                             gradient.addColorStop(0, '#34C759');
                             gradient.addColorStop(1, '#007AFF');
+                            primaryColor = '#34C759';
+                            borderColor = '#007AFF';
+                            bgColor = 'rgba(52, 199, 89, 0.1)';
                     }
+                    
+                    // Calculate useful stats for the trend summary
+                    const totalCount = trendData.data.reduce((sum, val) => sum + val, 0);
+                    const average = totalCount / trendData.data.filter(x => x > 0).length || 0;
+                    const today = trendData.data[trendData.data.length - 1];
+                    const highest = Math.max(...trendData.data);
+                    const highestDay = trendData.dates[trendData.data.indexOf(highest)];
+                    
+                    // Update trend summary
+                    const trendSummary = document.getElementById('trend-summary');
+                    trendSummary.innerHTML = `
+                        <div class="trend-stat">
+                            <div class="trend-stat-label">Total</div>
+                            <div class="trend-stat-value">${totalCount}</div>
+                        </div>
+                        <div class="trend-stat">
+                            <div class="trend-stat-label">Today</div>
+                            <div class="trend-stat-value">${today}</div>
+                        </div>
+                        <div class="trend-stat">
+                            <div class="trend-stat-label">Average/Day</div>
+                            <div class="trend-stat-value">${average.toFixed(1)}</div>
+                        </div>
+                        <div class="trend-stat">
+                            <div class="trend-stat-label">Highest (${highestDay})</div>
+                            <div class="trend-stat-value">${highest}</div>
+                        </div>
+                    `;
+                    
+                    // Update trend description
+                    document.getElementById('trend-description').textContent = `Showing data for ${type} over the last 7 days. Updated in real-time.`;
 
                     trendChart = new Chart(trendChartCanvas, {
                         type: 'line',
@@ -1810,35 +2206,87 @@
                                 label: type.charAt(0).toUpperCase() + type.slice(1),
                                 data: trendData.data,
                                 borderColor: gradient,
+                                backgroundColor: bgColor,
                                 borderWidth: 3,
-                                pointRadius: 0,
-                                fill: false,
+                                pointRadius: 6,
+                                pointBackgroundColor: '#FFFFFF',
+                                pointBorderColor: primaryColor,
+                                pointBorderWidth: 2,
+                                pointHoverRadius: 8,
+                                pointHoverBackgroundColor: primaryColor,
+                                pointHoverBorderColor: '#FFFFFF',
+                                pointHoverBorderWidth: 2,
+                                fill: true,
                                 tension: 0.4
                             }]
                         },
                         options: {
                             responsive: true,
-                            maintainAspectRatio: true,
-                            aspectRatio: 10,
+                            maintainAspectRatio: false,
                             plugins: {
                                 legend: { 
-                                    display: false
+                                    display: true,
+                                    position: 'top',
+                                    labels: {
+                                        color: '#ffffff',
+                                        font: { 
+                                            size: 14,
+                                            weight: 'bold'
+                                        },
+                                        usePointStyle: true,
+                                        padding: 20
+                                    }
                                 },
                                 tooltip: {
-                                    enabled: false
+                                    enabled: true,
+                                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                                    titleColor: '#ffffff',
+                                    bodyColor: '#ffffff',
+                                    borderColor: primaryColor,
+                                    borderWidth: 1,
+                                    padding: 12,
+                                    displayColors: true,
+                                    callbacks: {
+                                        title: function(tooltipItems) {
+                                            return tooltipItems[0].label;
+                                        },
+                                        label: function(context) {
+                                            return `${type.charAt(0).toUpperCase() + type.slice(1)}: ${context.raw}`;
+                                        }
+                                    }
                                 }
                             },
                             scales: {
                                 y: { 
-                                    display: false,
-                                    beginAtZero: true
+                                    display: true,
+                                    beginAtZero: true,
+                                    grid: { 
+                                        color: 'rgba(255, 255, 255, 0.1)',
+                                        drawBorder: false
+                                    },
+                                    ticks: { 
+                                        color: '#d0d0d0',
+                                        padding: 10,
+                                        font: { size: 12 },
+                                        stepSize: 1
+                                    }
                                 },
                                 x: { 
-                                    display: false
+                                    display: true,
+                                    grid: { 
+                                        display: false,
+                                        drawBorder: false
+                                    },
+                                    ticks: { 
+                                        color: '#d0d0d0',
+                                        padding: 10,
+                                        font: { size: 12 }
+                                    }
                                 }
                             },
                             animation: {
-                                duration: 1000
+                                duration: 1500,
+                                easing: 'easeOutQuart'
                             }
                         }
                     });
@@ -2118,32 +2566,43 @@
 
         document.getElementById("login-form").addEventListener("submit", async (e) => {
             e.preventDefault();
-            const email = document.getElementById("email").value.trim();
-            const password = document.getElementById("password").value;
             
-            if (!email) {
-                showLoginNotification("Please enter your email address.", "error");
-                return;
+            // Show spinner and disable button
+            if (loginBtn) {
+                loginBtn.disabled = true;
+                if (loginSpinner) loginSpinner.style.display = 'inline-block';
             }
             
-            if (!password) {
-                showLoginNotification("Please enter your password.", "error");
-                return;
-            }
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
             
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                if (adminEmails.includes(userCredential.user.email)) {
-                    console.log("Login successful:", userCredential.user.email);
-                    showLoginNotification("Welcome back! Login successful.");
+            // Authentication using Firebase
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // Check if user email is in admin list
+                    const user = userCredential.user;
+                    if (adminEmails.includes(user.email)) {
+                        loginSection.classList.add("hidden");
+                    mainContent.classList.remove("hidden");
+                        loadDashboardData();
                 } else {
+                        // Not an admin, sign out
+                        showNotification("You do not have admin privileges", "error", loginNotification);
                     signOut(auth);
-                    showLoginNotification("You don't have admin privileges to access this portal.", "error");
-                }
-            } catch (error) {
+                        
+                        // Reset button and spinner
+                        if (loginBtn) loginBtn.disabled = false;
+                        if (loginSpinner) loginSpinner.style.display = 'none';
+                    }
+                })
+                .catch((error) => {
+                    // Reset button and spinner
+                    if (loginBtn) loginBtn.disabled = false;
+                    if (loginSpinner) loginSpinner.style.display = 'none';
+                    
                 console.error("Login error:", error);
-                showLoginNotification(error.message, "error");
-            }
+                    showNotification(error.message, "error", loginNotification);
+                });
         });
 
         document.getElementById("logout-btn").addEventListener("click", async () => {
