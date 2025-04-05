@@ -2683,6 +2683,12 @@
             }, 3000);
         });
         
+        if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    for (let reg of regs) reg.update();
+  });
+}
+
         // Toggle handlers
         const toggles = ["2fa-toggle", "email-notif-toggle", "maintenance-toggle", "refresh-toggle"];
         toggles.forEach(id => {
