@@ -7,435 +7,691 @@
     <link rel="manifest" href="/manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --primary-gradient: linear-gradient(45deg, #007aff, #34c759);
-            --danger-gradient: linear-gradient(45deg, #ff3b30, #ff9500);
-            --edit-gradient: linear-gradient(45deg, #ff9500, #ffcc00);
-            --bg-dark: #1c1c1e;
-            --card-bg: #252527;
-            --sidebar-bg: rgba(44, 44, 46, 0.95);
+        body { 
+            background: #1c1c1e; 
+            color: #e0e0e0; 
+            font-family: 'SF Pro Display', sans-serif; 
+            margin: 0; 
+            padding: 0 0 20px 0; 
+            min-height: 100vh; 
+            -webkit-user-select: none; 
+            -ms-user-select: none; 
+            user-select: none; 
+            -webkit-touch-callout: none; 
+            overflow-x: hidden; 
         }
-        * {
-            box-sizing: border-box;
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 30px 20px; 
+            position: relative; 
+            transition: margin-left 0.3s ease;
+        }
+        .section { 
+            background: #252527; 
+            border-radius: 20px; 
+            padding: 30px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); 
+            transition: transform 0.3s ease, opacity 0.3s ease; 
+        }
+        .section.hidden { 
+            transform: translateY(20px); 
+            opacity: 0; 
+            pointer-events: none; 
+        }
+        h1 { 
+            font-size: clamp(1.5rem, 5vw, 2.5rem); 
+            font-weight: 700; 
+            letter-spacing: -2px;
             margin: 0;
-            padding: 0;
-        }
-        body {
-            background: var(--bg-dark);
-            color: #e0e0e0;
-            font-family: 'SF Pro Display', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            overflow-x: hidden;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        .sidebar {
-            width: 250px;
-            background: var(--sidebar-bg);
-            backdrop-filter: blur(20px);
-            padding: 20px;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            transform: translateX(0);
-            transition: transform 0.3s ease;
-            z-index: 1000;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
-        }
-        .sidebar.hidden {
-            transform: translateX(-100%);
-        }
-        .sidebar h1 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 2rem;
-            background: var(--primary-gradient);
+            background: linear-gradient(45deg, #007aff, #34c759, #007aff);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+            text-shadow: 0 4px 20px rgba(0, 122, 255, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+        h2 { 
+            font-size: clamp(1.25rem, 3vw, 1.75rem); 
+            font-weight: 600; 
+            margin-bottom: 20px; 
+            text-align: center; 
+            color: #ffffff; 
+        }
+        h4 { 
+            margin: 0 0 10px; 
+            font-size: clamp(1rem, 2.5vw, 1.25rem); 
+            font-weight: 600; 
+            color: #ffffff; 
+        }
+        p { 
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem); 
+            opacity: 1; 
+            color: #d0d0d0; 
+        }
+        .btn { 
+            background: linear-gradient(45deg, #34c759, #007aff);
+            color: white;
+            border: none; 
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer; 
+            width: 100%; 
+            font-size: 16px;
+            transition: all 0.3s;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn:hover { 
+            background: linear-gradient(135deg, #34c759, #007aff);
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 15px rgba(255, 45, 85, 0.4);
+        }
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(45, 174, 255, 0.2);
+        }
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .btn-secondary { 
+            background: #30c8ff; 
+            padding: 8px 18px; 
+        }
+        .btn-secondary:hover { 
+            background: #26a5dc; 
+        }
+        .input { 
+            background: #343436; 
+            border: none; 
+            color: #fff; 
+            padding: 14px; 
+            border-radius: 12px; 
+            width: 100%; 
+            margin-bottom: 15px; 
+            font-size: clamp(0.875rem, 2.5vw, 1rem); 
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3); 
+            transition: background 0.2s ease, transform 0.2s ease; 
+        }
+        .input:focus { 
+            background: #3a3a3c; 
+            outline: none; 
+            transform: scale(1.02); 
+        }
+        .notification { 
+            position: fixed; 
+            top: 20px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            background: rgba(52, 199, 89, 0.9);
+            color: white;
+            padding: 12px 15px;
+            border-radius: 10px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border-left: 4px solid #34C759;
+            z-index: 1000; 
+            opacity: 0; 
+            transition: opacity 0.3s ease; 
+        }
+        .notification.show { 
+            opacity: 1; 
+        }
+        .notification.error { 
+            background: rgba(255, 59, 48, 0.9);
+            border-left-color: #FF3B30;
+        }
+        .notification-icon {
+            font-size: 18px;
+        }
+        .item { 
+            background: #2c2c2e; 
+            padding: 20px; 
+            border-radius: 14px; 
+            margin-bottom: 15px; 
+            transition: transform 0.2s ease, box-shadow 0.2s ease; 
+        }
+        .item:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4); 
+        }
+        .item h4 { 
+            margin: 0 0 10px; 
+            font-size: clamp(1rem, 2.5vw, 1.25rem); 
+            font-weight: 600; 
+            color: #ffffff; 
+        }
+        .item p { 
+            margin: 5px 0; 
+            font-size: clamp(0.85rem, 2vw, 0.95rem); 
+            color: #d0d0d0; 
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -250px; /* Hidden by default */
+            width: 250px;
+            height: 100%;
+            background: rgba(44, 44, 46, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 20px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 2px 0 40px rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            transition: left 0.3s ease;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .sidebar.open {
+            left: 0;
+        }
+        .sidebar-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #007aff;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            z-index: 1100;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+        .sidebar-toggle:hover {
+            background: #005bb5;
+            transform: scale(1.1);
         }
         .sidebar button {
-            width: 100%;
             background: none;
             color: #b0b0b0;
-            padding: 12px 16px;
-            font-size: 1rem;
+            padding: 20px;
+            font-size: clamp(0.9rem, 2vw, 1rem);
             font-weight: 500;
             border-radius: 12px;
+            transition: all 0.3s ease;
             border: none;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 8px;
-            transition: all 0.2s ease;
+            gap: 10px;
+            text-align: left;
+            width: 100%;
         }
         .sidebar button i {
-            font-size: 1.25rem;
+            font-size: clamp(1.2rem, 2.5vw, 1.5rem);
         }
         .sidebar button.active {
             background: #007aff;
             color: #fff;
-            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+            box-shadow: 0 2px 10px rgba(0, 122, 255, 0.4);
         }
         .sidebar button:hover:not(.active) {
-            background: rgba(255, 255, 255, 0.1);
             color: #fff;
+            background: rgba(255, 255, 255, 0.15);
         }
-        .main-content {
-            flex: 1;
-            margin-left: 250px;
-            padding: 20px;
-            transition: margin-left 0.3s ease;
-        }
-        .main-content.full {
-            margin-left: 0;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        .section {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-        .section.hidden {
-            display: none;
-        }
-        h2 {
-            font-size: 1.75rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            text-align: center;
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-        .btn {
-            background: var(--primary-gradient);
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            border: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-        }
-        .btn:hover {
-            background: linear-gradient(135deg, #2ea44f, #005bb5);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(0, 122, 255, 0.3);
-        }
-        .btn-danger {
-            background: var(--danger-gradient);
-        }
-        .btn-danger:hover {
-            background: linear-gradient(135deg, #d32f2f, #e68600);
-        }
-        .btn-edit {
-            background: var(--edit-gradient);
-        }
-        .btn-edit:hover {
-            background: linear-gradient(135deg, #e68600, #e6b800);
-        }
-        .input {
-            background: #343436;
-            border: none;
-            color: #fff;
-            padding: 12px;
-            border-radius: 10px;
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            font-size: 0.95rem;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
-            transition: all 0.2s ease;
-        }
-        .input:focus {
-            background: #3a3a3c;
-            outline: none;
-            box-shadow: 0 0 0 2px #007aff;
-        }
-        .error {
-            color: #ff3b30;
-            font-size: 0.85rem;
-            margin-top: 4px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
             display: none;
+            transition: opacity 0.3s ease;
         }
-        .error.show {
+        .overlay.active {
             display: block;
-        }
-        .notification {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(52, 199, 89, 0.95);
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 12px;
-            z-index: 2000;
-            opacity: 0;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-        .notification.show {
             opacity: 1;
-            transform: translateX(-50%) translateY(0);
         }
-        .notification.error {
-            background: rgba(255, 59, 48, 0.95);
+        #login-section { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #1c1c1e 0%, #252527 100%); 
+            z-index: 2000; 
+            overflow: hidden; 
         }
-        .hamburger {
-            display: none;
-            font-size: 1.5rem;
-            background: none;
-            border: none;
-            color: #e0e0e0;
-            cursor: pointer;
-            position: fixed;
-            top: 15px;
-            left: 15px;
-            z-index: 1100;
+        #login-section::before { 
+            content: ''; 
+            position: absolute; 
+            top: -50%; 
+            left: -50%; 
+            width: 200%; 
+            height: 200%; 
+            background: radial-gradient(circle, rgba(0, 122, 255, 0.1) 0%, transparent 70%); 
+            animation: pulse 10s infinite; 
+            z-index: 0; 
+        }
+        #login-section .login-container { 
+            background: #2c2c2e; 
+            border-radius: 20px; 
+            padding: 40px; 
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); 
+            width: 100%; 
+            max-width: 400px; 
+            z-index: 1; 
+            animation: fadeIn 0.5s ease; 
+        }
+        #login-section h1 { 
+            font-size: clamp(1.5rem, 5vw, 2.5rem); 
+            font-weight: 700; 
+            text-align: center; 
+            margin-bottom: 30px; 
+            background: linear-gradient(45deg, #007aff, #34c759); 
+            -webkit-background-clip: text; 
+            background-clip: text; 
+            color: transparent; 
+        }
+        #login-section.hidden { 
+            display: none; 
+        }
+        .user-item {
+            background: #2c2c2e;
+            padding: 20px;
+            border-radius: 14px;
+            margin-bottom: 15px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 15px;
+            align-items: center;
+        }
+        .user-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+        .user-details {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .user-details h4 {
+            margin: 0;
+            font-size: clamp(1rem, 2.5vw, 1.25rem);
+            font-weight: 600;
+            color: #ffffff;
+        }
+        .user-details p {
+            margin: 0;
+            font-size: clamp(0.85rem, 2vw, 0.95rem);
+            color: #d0d0d0;
+            word-break: break-word;
+        }
+        .user-actions {
+            display: flex;
+            gap: 10px;
         }
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
         }
         .dashboard-card {
             background: #2c2c2e;
-            padding: 20px;
-            border-radius: 12px;
+            padding: 25px;
+            border-radius: 16px;
             text-align: center;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-        }
-        .dashboard-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-        }
-        .dashboard-card h3 {
-            font-size: 0.9rem;
-            color: #b0b0b0;
-            margin-bottom: 8px;
-        }
-        .dashboard-card p {
-            font-size: 1.5rem;
-            font-weight: 700;
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-        .chart-container {
-            background: #2c2c2e;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-            margin-bottom: 24px;
-        }
-        .item {
-            background: #2c2c2e;
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s ease;
-        }
-        .item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
-        .item h4 {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-        .item p {
-            font-size: 0.9rem;
-            color: #b0b0b0;
-        }
-        .item .actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 2000;
-            opacity: 0;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+        .dashboard-card:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+        }
+        .dashboard-card.restaurants:after { 
+            background: linear-gradient(90deg, #FF9500, #FF2D55); 
+            box-shadow: 0 0 15px rgba(255, 149, 0, 0.3);
+        }
+        .dashboard-card.vendors:after { 
+            background: linear-gradient(90deg, #5AC8FA, #007AFF); 
+            box-shadow: 0 0 15px rgba(90, 200, 250, 0.3);
+        }
+        .dashboard-card.orders:after { 
+            background: linear-gradient(90deg, #34C759, #32D74B); 
+            box-shadow: 0 0 15px rgba(52, 199, 89, 0.3);
+        }
+        .dashboard-card.users:after { 
+            background: linear-gradient(90deg, #AF52DE, #5E5CE6); 
+            box-shadow: 0 0 15px rgba(175, 82, 222, 0.3);
+        }
+        .dashboard-card h3 {
+            font-size: clamp(1.1rem, 2.5vw, 1.3rem);
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 6px;
+            position: relative;
+            z-index: 1;
+        }
+        .dashboard-card .subtitle {
+            font-size: 0.85rem;
+            color: #a0a0a0;
+            margin-bottom: 15px;
+        }
+        .dashboard-card p {
+            font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+            font-weight: 700;
+            margin: 0;
+            position: relative;
+            z-index: 1;
+        }
+        .dashboard-card.restaurants p { background: linear-gradient(45deg, #FF9500, #FF2D55); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .dashboard-card.vendors p { background: linear-gradient(45deg, #5AC8FA, #007AFF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .dashboard-card.orders p { background: linear-gradient(45deg, #34C759, #32D74B); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .dashboard-card.users p { background: linear-gradient(45deg, #AF52DE, #5E5CE6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .dashboard-card i {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            font-size: 1.5rem;
+            opacity: 0.2;
+            color: #ffffff;
+        }
+        .mini-chart {
+            width: 100%;
+            height: 15px !important;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            max-height: 15px !important;
+            overflow: hidden;
+            border-radius: 5px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .tooltip {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
             pointer-events: none;
+            opacity: 0;
             transition: opacity 0.3s ease;
+            z-index: 100;
+            white-space: nowrap;
         }
-        .modal.show {
+        .tooltip:after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid rgba(0, 0, 0, 0.8);
+        }
+        .dashboard-card:hover .tooltip {
             opacity: 1;
-            pointer-events: auto;
+            top: -50px;
         }
-        .modal-content {
-            background: #2c2c2e;
+        .welcome-message {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
             padding: 20px;
             border-radius: 16px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
-        .modal-content h3 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 16px;
-            text-align: center;
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+        .welcome-text {
+            flex: 1;
+        }
+        .welcome-text h2 {
+            font-size: clamp(1.3rem, 3vw, 1.7rem);
+            color: #ffffff;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+        .welcome-text p {
+            font-size: 0.95rem;
+            color: #a0a0a0;
+            margin: 0;
+        }
+        .date-display {
+            font-size: 0.9rem;
+            color: #a0a0a0;
+            text-align: right;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #a0a0a0;
+            cursor: pointer;
+            z-index: 10;
+            padding: 8px;
+        }
+        .password-toggle:hover {
+            color: #ffffff;
         }
         @media (max-width: 768px) {
-            .sidebar {
-                width: 220px;
-                transform: translateX(-100%);
+            .container { 
+                padding: 20px 15px; 
             }
-            .sidebar.show {
-                transform: translateX(0);
+            .section { padding: 25px; }
+            .sidebar { width: 200px; }
+            .sidebar-toggle { 
+                padding: 8px; 
+                font-size: 1rem; 
             }
-            .main-content {
-                margin-left: 0;
-                padding: 15px;
+            .sidebar button { 
+                padding: 10px; 
+                font-size: clamp(0.85rem, 2vw, 0.95rem); 
             }
-            .hamburger {
-                display: block;
+            .sidebar button i { 
+                font-size: clamp(1.1rem, 2vw, 1.3rem); 
             }
-            .dashboard-grid {
-                grid-template-columns: 1fr;
+            #login-section .login-container { padding: 30px; }
+            .user-item { grid-template-columns: 1fr; }
+            .user-actions { margin-top: 10px; justify-content: flex-end; }
+        }
+        @media (max-width: 480px) {
+            .container { 
+                padding: 15px 10px; 
             }
-            .item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
+            .section { padding: 20px; }
+            .sidebar { width: 180px; }
+            .sidebar-toggle { 
+                padding: 6px; 
+                font-size: 0.9rem; 
             }
-            .item .actions {
-                width: 100%;
-                justify-content: flex-end;
+            .sidebar button { 
+                padding: 20px; 
+                font-size: clamp(0.9rem, 1.8vw, 0.9rem); 
             }
-            .btn {
-                width: 100%;
-                justify-content: center;
+            .sidebar button i { 
+                font-size: clamp(1rem, 2vw, 1.2rem); 
             }
-            .modal-content {
-                width: 95%;
+            #login-section .login-container { 
+                padding: 20px; 
+                max-width: 90%; 
             }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.3; }
+            100% { transform: scale(1); opacity: 0.5; }
         }
     </style>
 </head>
 <body>
-    <button class="hamburger"><i class="fas fa-bars"></i></button>
+    <div id="loading-screen" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1c1c1e; display: flex; align-items: center; justify-content: center; z-index: 3000;">
+        <h1 style="font-size: 3rem; font-weight: 600; letter-spacing: -2px; background: linear-gradient(45deg, #007aff, #34c759, #007aff); -webkit-background-clip: text; background-clip: text; color: transparent;">Chawp</h1>
+    </div>
+
+    <button class="sidebar-toggle" id="sidebar-toggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
     <div class="sidebar" id="sidebar">
-        <h1>Chawp Admin</h1>
         <button id="dashboard-btn" class="active"><i class="fas fa-chart-line"></i> Dashboard</button>
         <button id="restaurants-btn"><i class="fas fa-store"></i> Restaurants</button>
-        <button id="vendors-btn"><i class="fas fa-user-tie"></i> Vendors</button>
+        <button id="vendor-mappings-btn"><i class="fas fa-user-tie"></i> Vendors</button>
         <button id="orders-btn"><i class="fas fa-shopping-cart"></i> Orders</button>
         <button id="users-btn"><i class="fas fa-users"></i> Users</button>
         <button id="settings-btn"><i class="fas fa-cog"></i> Settings</button>
-        <button id="logout-btn" class="btn-danger"><i class="fas fa-sign-out-alt"></i> Logout</button>
     </div>
 
-    <div id="main-content" class="main-content">
-        <div class="container">
-            <h1 class="text-3xl font-semibold text-center mb-4">Chawp Admin Portal</h1>
-            <p class="text-center text-gray-400 mb-10">Command your food empire with precision.</p>
+    <div class="overlay" id="overlay"></div>
 
-            <div id="notification" class="notification"></div>
-
-            <div id="dashboard" class="section">
-                <h2>Dashboard</h2>
-                <div class="dashboard-grid">
-                    <div class="dashboard-card"><h3>Total Users</h3><p id="total-users">0</p></div>
-                    <div class="dashboard-card"><h3>Total Orders</h3><p id="total-orders">0</p></div>
-                    <div class="dashboard-card"><h3>Total Revenue</h3><p id="total-revenue">GH₵0</p></div>
-                    <div class="dashboard-card"><h3>Active Deliveries</h3><p id="active-deliveries">0</p></div>
+    <div id="login-section" class="section" style="display: none;">
+        <div class="login-container">
+            <h1>Admin Portal</h1>
+            <div id="login-notification" class="notification" style="position: relative; width: 100%; display: none;">
+                <i class="fas fa-info-circle notification-icon"></i>
+                <span id="login-notification-message"></span>
+            </div>
+            <form id="login-form">
+                <input type="email" id="email" placeholder="Email" class="input">
+                <div class="password-wrapper">
+                    <input type="password" id="password" placeholder="Password" class="input">
+                    <button type="button" class="password-toggle" id="password-toggle">
+                        <i class="fas fa-eye"></i>
+                    </button>
                 </div>
-                <div class="chart-container">
-                    <canvas id="orders-chart"></canvas>
+                <button type="submit" id="login-btn" class="btn">
+                    <span>Login</span>
+                    <span class="btn-spinner" id="login-spinner"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="main-content" class="container hidden">
+        <h1 class="text-4xl font-semibold text-center mb-4">Chawp Admin Portal</h1>
+        <p class="text-center text-gray-400 mb-12">Oversee the entire Chawp ecosystem.</p>
+
+        <div id="notification" class="notification"></div>
+
+        <div id="dashboard" class="section">
+            <div class="welcome-message">
+                <div class="welcome-text">
+                    <h2>Welcome to Chawp Admin</h2>
+                    <p>Here's what's happening with your platform today</p>
                 </div>
+                <div class="date-display" id="current-date">Loading...</div>
             </div>
+            <div class="dashboard-grid" id="dashboard-grid"></div>
+        </div>
 
-            <div id="restaurants" class="section hidden">
-                <h2>Restaurants</h2>
-                <button id="add-restaurant" class="btn mb-6"><i class="fas fa-plus"></i> Add Restaurant</button>
-                <div id="restaurant-list"></div>
-            </div>
+        <div id="restaurants" class="section hidden">
+            <h2 class="text-2xl font-semibold mb-4">Manage Restaurants</h2>
+            <form id="restaurant-form" class="mb-6">
+                <input type="text" id="restaurant-name" placeholder="Restaurant Name" class="input">
+                <input type="text" id="restaurant-image" placeholder="Image URL" class="input">
+                <input type="number" id="delivery-time" placeholder="Delivery Time (minutes)" class="input" min="0">
+                <button type="submit" class="btn w-full">Add Restaurant</button>
+            </form>
+            <div id="restaurant-list"></div>
+        </div>
 
-            <div id="vendors" class="section hidden">
-                <h2>Vendors</h2>
-                <button id="add-vendor" class="btn mb-6"><i class="fas fa-plus"></i> Add Vendor</button>
-                <div id="vendor-list"></div>
-            </div>
+        <div id="vendor-mappings" class="section hidden">
+            <h2 class="text-2xl font-semibold mb-4">Vendor Mappings</h2>
+            <form id="vendor-mapping-form" class="mb-6">
+                <input type="email" id="vendor-email" placeholder="Vendor Email" class="input">
+                <input type="text" id="vendor-restaurant-id" placeholder="Restaurant ID" class="input">
+                <button type="submit" class="btn w-full">Add Mapping</button>
+            </form>
+            <div id="vendor-mapping-list"></div>
+        </div>
 
-            <div id="orders" class="section hidden">
-                <h2>Orders</h2>
-                <div id="orders-list"></div>
-            </div>
+        <div id="orders" class="section hidden">
+            <h2 class="text-2xl font-semibold mb-4">View Orders</h2>
+            <div id="orders-list"></div>
+        </div>
 
-            <div id="users" class="section hidden">
-                <h2>Users</h2>
-                <div id="users-list"></div>
-            </div>
+        <div id="users" class="section hidden">
+            <h2 class="text-2xl font-semibold mb-4">Manage Users</h2>
+            <div id="users-list"></div>
+        </div>
 
-            <div id="settings" class="section hidden">
-                <h2>Settings</h2>
-                <form id="settings-form">
-                    <label class="block mb-2 text-sm font-medium">Contact Email</label>
-                    <input type="email" id="contact-email" class="input" placeholder="Contact Email" value="support@chawp.com">
-                    <span id="contact-email-error" class="error"></span>
-                    <label class="block mb-2 text-sm font-medium">WhatsApp Number</label>
-                    <input type="tel" id="whatsapp" class="input" placeholder="WhatsApp Number" value="+1234567890">
-                    <span id="whatsapp-error" class="error"></span>
-                    <label class="block mb-2 text-sm font-medium">Platform Fee (%)</label>
-                    <input type="number" id="platform-fee" class="input" placeholder="Platform Fee (%)" value="5" min="0" max="100">
-                    <span id="platform-fee-error" class="error"></span>
-                    <button type="submit" class="btn w-full mt-4"><i class="fas fa-save"></i> Save</button>
-                </form>
-            </div>
-
-            <div id="modal" class="modal">
-                <div class="modal-content">
-                    <h3 id="modal-title"></h3>
-                    <form id="modal-form"></form>
-                    <button id="modal-close" class="btn btn-danger mt-4 w-full"><i class="fas fa-times"></i> Close</button>
-                </div>
-            </div>
+        <div id="settings" class="section hidden">
+            <h2 class="text-2xl font-semibold mb-4">Settings</h2>
+            <p>Settings are currently unavailable.</p>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { 
+            getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, deleteDoc, updateDoc, query, onSnapshot 
+        } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+        import { 
+            getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence 
+        } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyADvpUQWo75ExePGoCRirD2mM-lmfM4Cmc",
@@ -450,480 +706,484 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        const adminEmails = ["admin@gmail.com"];
 
-        setPersistence(auth, browserLocalPersistence).catch(error => {
-            console.error("Persistence error:", error);
-        });
+        setPersistence(auth, browserLocalPersistence).catch(error => console.error("Persistence error:", error));
 
-        function showNotification(message, type = "success") {
-            const notification = document.getElementById("notification");
-            notification.innerHTML = `<i class="fas fa-${type === "error" ? "exclamation-circle" : "check-circle"}"></i> ${message}`;
-            notification.className = `notification ${type}`;
-            notification.classList.add("show");
-            setTimeout(() => notification.classList.remove("show"), 4000);
+        const passwordToggle = document.getElementById('password-toggle');
+        const passwordInput = document.getElementById('password');
+        
+        if (passwordToggle && passwordInput) {
+            passwordToggle.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.querySelector('i').classList.toggle('fa-eye');
+                this.querySelector('i').classList.toggle('fa-eye-slash');
+            });
         }
 
-        function toggleSection(sectionId) {
-            document.querySelectorAll(".section").forEach(s => s.classList.add("hidden"));
-            document.getElementById(sectionId).classList.remove("hidden");
-            document.querySelectorAll(".sidebar button").forEach(btn => btn.classList.remove("active"));
-            document.getElementById(`${sectionId}-btn`)?.classList.add("active");
-            closeSidebarOnClick();
+        const loadingScreen = document.getElementById("loading-screen");
+        const loginSection = document.getElementById("login-section");
+        const mainContent = document.getElementById("main-content");
+        const notification = document.getElementById("notification");
+        const loginNotification = document.getElementById("login-notification");
+        const loginForm = document.getElementById("login-form");
+        const loginBtn = document.getElementById("login-btn");
+        const loginSpinner = document.getElementById("login-spinner");
+        const dashboardGrid = document.getElementById("dashboard-grid");
+        const restaurantList = document.getElementById("restaurant-list");
+        const vendorMappingList = document.getElementById("vendor-mapping-list");
+        const ordersList = document.getElementById("orders-list");
+        const usersList = document.getElementById("users-list");
+        const sidebar = document.getElementById("sidebar");
+        const sidebarToggle = document.getElementById("sidebar-toggle");
+        const overlay = document.getElementById("overlay");
+
+        function toggleSidebar() {
+            sidebar.classList.toggle("open");
+            overlay.classList.toggle("active");
         }
 
-        function showModal(title, formHTML, onSubmit) {
-            const modal = document.getElementById("modal");
-            document.getElementById("modal-title").textContent = title;
-            document.getElementById("modal-form").innerHTML = formHTML;
-            document.getElementById("modal-form").onsubmit = onSubmit;
-            modal.classList.add("show");
+        function closeSidebar() {
+            sidebar.classList.remove("open");
+            overlay.classList.remove("active");
         }
 
-        function closeSidebarOnClick() {
-            if (window.innerWidth <= 768) {
-                document.getElementById("sidebar").classList.remove("show");
-                document.getElementById("main-content").classList.add("full");
+        sidebarToggle.addEventListener("click", toggleSidebar);
+        overlay.addEventListener("click", closeSidebar);
+
+        function formatErrorMessage(errorMsg) {
+            if (errorMsg.includes('auth/invalid-email')) {
+                return 'Please enter a valid email address.';
+            } else if (errorMsg.includes('auth/user-not-found')) {
+                return 'No account found with this email. Please check and try again.';
+            } else if (errorMsg.includes('auth/wrong-password')) {
+                return 'Incorrect password. Please try again.';
+            } else if (errorMsg.includes('auth/too-many-requests')) {
+                return 'Too many login attempts. Please try again later.';
+            } else if (errorMsg.includes('auth/network-request-failed')) {
+                return 'Network error. Please check your connection and try again.';
+            } else if (errorMsg.includes('auth/email-already-in-use')) {
+                return 'This email is already registered.';
+            } else if (errorMsg.includes('auth/weak-password')) {
+                return 'Password is too weak. Please use a stronger password.';
+            } else if (errorMsg.includes('auth/operation-not-allowed')) {
+                return 'This operation is not allowed. Please contact support.';
+            } else if (errorMsg.includes('auth/')) {
+                return 'Wrong email or password. Please try again.';
+            } else {
+                return errorMsg;
             }
         }
 
-        document.getElementById("modal-close").addEventListener("click", () => {
-            document.getElementById("modal").classList.remove("show");
-        });
-
-        async function loadDashboard() {
-            let ordersChart;
-            onSnapshot(collection(db, "users"), snap => {
-                document.getElementById("total-users").textContent = snap.size;
-            });
-            onSnapshot(collection(db, "restaurant"), snap => {
-                document.getElementById("total-revenue").textContent = `GH₵${snap.docs.reduce((sum, doc) => sum + (doc.data().revenue || 0), 0).toFixed(2)}`;
-            });
-            onSnapshot(collection(db, "orders"), snap => {
-                document.getElementById("total-orders").textContent = snap.size;
-                document.getElementById("active-deliveries").textContent = snap.docs.filter(doc => doc.data().status === "being_delivered").length;
-
-                const dailyOrders = {};
-                snap.docs.forEach(doc => {
-                    const date = new Date(doc.data().timestamp).toLocaleDateString();
-                    dailyOrders[date] = (dailyOrders[date] || 0) + 1;
-                });
-
-                if (ordersChart) ordersChart.destroy();
-                ordersChart = new Chart(document.getElementById("orders-chart").getContext("2d"), {
-                    type: "line",
-                    data: {
-                        labels: Object.keys(dailyOrders).slice(-7),
-                        datasets: [{
-                            label: "Orders per Day",
-                            data: Object.values(dailyOrders).slice(-7),
-                            borderColor: "#34c759",
-                            backgroundColor: "rgba(52, 199, 89, 0.2)",
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            x: { grid: { color: "rgba(255, 255, 255, 0.1)" } },
-                            y: { grid: { color: "rgba(255, 255, 255, 0.1)" }, beginAtZero: true }
-                        },
-                        plugins: {
-                            legend: { labels: { color: "#e0e0e0" } },
-                            tooltip: { backgroundColor: "rgba(0, 0, 0, 0.8)" }
-                        }
-                    }
-                });
-            });
+        function showNotification(message, type = "success", target = notification) {
+            let displayMessage = message;
+            if (type === "error") {
+                displayMessage = formatErrorMessage(message);
+            }
+            target.textContent = displayMessage;
+            target.className = `notification ${type === "error" ? "error" : ""} show`;
+            setTimeout(() => target.classList.remove("show"), 5000);
         }
 
-        function loadRestaurants() {
-            onSnapshot(collection(db, "restaurant"), snap => {
-                const list = document.getElementById("restaurant-list");
-                list.innerHTML = "";
-                snap.forEach(doc => {
+        function showLoginNotification(message, type = "success") {
+            showNotification(message, type, loginNotification);
+        }
+
+        function toggleSection(sectionId) {
+            const sections = ["dashboard", "restaurants", "vendor-mappings", "orders", "users", "settings"];
+            sections.forEach(id => {
+                const section = document.getElementById(id);
+                if (section) {
+                    section.classList.toggle("hidden", id !== sectionId);
+                }
+                const btn = document.getElementById(`${id}-btn`);
+                if (btn) {
+                    btn.classList.toggle("active", id === sectionId);
+                }
+            });
+            closeSidebar(); // Close sidebar after selecting an option
+        }
+
+        async function loadRestaurants() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "restaurant"));
+                const fragment = document.createDocumentFragment();
+                querySnapshot.forEach(doc => {
                     const data = doc.data();
                     const item = document.createElement("div");
                     item.className = "item";
                     item.innerHTML = `
-                        <div>
-                            <h4>${data.name}</h4>
-                            <p>Status: <span style="color: ${data.isOpen ? '#34c759' : '#ff3b30'}">${data.isOpen ? "Open" : "Closed"}</span></p>
-                            <p>Revenue: GH₵${(data.revenue || 0).toFixed(2)}</p>
-                        </div>
-                        <div class="actions">
-                            <button class="btn btn-edit edit-restaurant" data-id="${doc.id}"><i class="fas fa-edit"></i> Edit</button>
-                            <button class="btn toggle-restaurant" data-id="${doc.id}" data-status="${data.isOpen}"><i class="fas fa-power-off"></i> ${data.isOpen ? "Close" : "Open"}</button>
-                            <button class="btn btn-danger delete-restaurant" data-id="${doc.id}"><i class="fas fa-trash"></i> Delete</button>
-                        </div>
+                        <h4>${data.name || "Unnamed"}</h4>
+                        <p>ID: ${doc.id}</p>
+                        <p>Image: ${data.image || "None"}</p>
+                        <p>Delivery Time: ${data.deliveryTime || "Not set"} minutes</p>
+                        <p>Status: ${data.isOpen ? "Open" : "Closed"}</p>
+                        <button class="btn btn-secondary delete-restaurant" data-id="${doc.id}">Delete</button>
                     `;
-                    item.querySelector(".edit-restaurant").addEventListener("click", () => {
-                        showModal(`Edit Restaurant: ${data.name}`, `
-                            <label class="block mb-2 text-sm font-medium">Name</label>
-                            <input id="rest-name" class="input" value="${data.name}" required>
-                            <span id="rest-name-error" class="error"></span>
-                            <label class="block mb-2 text-sm font-medium">Image URL</label>
-                            <input id="rest-image" class="input" value="${data.image || ''}">
-                            <button type="submit" class="btn w-full mt-4"><i class="fas fa-save"></i> Save</button>
-                        `, async e => {
-                            e.preventDefault();
-                            const name = document.getElementById("rest-name").value.trim();
-                            if (!name) {
-                                document.getElementById("rest-name-error").textContent = "Name is required";
-                                document.getElementById("rest-name-error").classList.add("show");
-                                return;
-                            }
-                            await setDoc(doc(db, "restaurant", doc.id), {
-                                name,
-                                image: document.getElementById("rest-image").value,
-                                timestamp: Date.now()
-                            }, { merge: true });
-                            showNotification("Restaurant updated!");
-                            document.getElementById("modal").classList.remove("show");
-                        });
-                    });
-                    item.querySelector(".toggle-restaurant").addEventListener("click", async () => {
-                        await setDoc(doc(db, "restaurant", doc.id), { isOpen: !data.isOpen }, { merge: true });
-                        showNotification(`Restaurant ${data.isOpen ? "closed" : "opened"}!`);
-                    });
                     item.querySelector(".delete-restaurant").addEventListener("click", () => {
-                        if (confirm("Delete this restaurant?")) {
-                            deleteDoc(doc(db, "restaurant", doc.id));
-                            showNotification("Restaurant deleted!");
-                        }
+                        if (confirm(`Are you sure you want to delete restaurant ID: ${doc.id}?`)) deleteRestaurant(doc.id);
                     });
-                    list.appendChild(item);
+                    fragment.appendChild(item);
                 });
-            });
+                restaurantList.innerHTML = "";
+                restaurantList.appendChild(fragment);
+                if (!querySnapshot.size) restaurantList.innerHTML = "<p class='text-gray-400'>No restaurants found.</p>";
+            } catch (error) {
+                console.error("Error loading restaurants:", error);
+                showNotification("Failed to load restaurants", "error");
+            }
         }
 
-        function loadVendors() {
-            onSnapshot(collection(db, "vendorMappings"), snap => {
-                const list = document.getElementById("vendor-list");
-                list.innerHTML = "";
-                snap.forEach(doc => {
+        async function loadVendorMappings() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "vendorMappings"));
+                const fragment = document.createDocumentFragment();
+                querySnapshot.forEach(doc => {
                     const data = doc.data();
                     const item = document.createElement("div");
                     item.className = "item";
                     item.innerHTML = `
-                        <div>
-                            <h4>${doc.id}</h4>
-                            <p>Restaurant ID: ${data.restaurantId}</p>
-                        </div>
-                        <div class="actions">
-                            <button class="btn btn-edit edit-vendor" data-id="${doc.id}"><i class="fas fa-edit"></i> Edit</button>
-                            <button class="btn btn-danger delete-vendor" data-id="${doc.id}"><i class="fas fa-trash"></i> Delete</button>
-                        </div>
+                        <h4>${doc.id}</h4>
+                        <p>Restaurant ID: ${data.restaurantId}</p>
+                        <button class="btn btn-secondary delete-mapping" data-id="${doc.id}">Delete</button>
                     `;
-                    item.querySelector(".edit-vendor").addEventListener("click", () => {
-                        showModal(`Edit Vendor: ${doc.id}`, `
-                            <label class="block mb-2 text-sm font-medium">Email</label>
-                            <input id="vendor-email" class="input" value="${doc.id}" disabled>
-                            <label class="block mb-2 text-sm font-medium">Restaurant ID</label>
-                            <input id="vendor-restid" class="input" value="${data.restaurantId}" required>
-                            <span id="vendor-restid-error" class="error"></span>
-                            <button type="submit" class="btn w-full mt-4"><i class="fas fa-save"></i> Save</button>
-                        `, async e => {
-                            e.preventDefault();
-                            const restId = document.getElementById("vendor-restid").value.trim();
-                            const restSnap = await getDoc(doc(db, "restaurant", restId));
-                            if (!restSnap.exists()) {
-                                document.getElementById("vendor-restid-error").textContent = "Invalid Restaurant ID";
-                                document.getElementById("vendor-restid-error").classList.add("show");
-                                return;
-                            }
-                            await setDoc(doc(db, "vendorMappings", doc.id), {
-                                restaurantId: restId,
-                                timestamp: Date.now()
-                            });
-                            showNotification("Vendor updated!");
-                            document.getElementById("modal").classList.remove("show");
-                        });
+                    item.querySelector(".delete-mapping").addEventListener("click", () => {
+                        if (confirm(`Are you sure you want to delete vendor mapping for email: ${doc.id}?`)) deleteVendorMapping(doc.id);
                     });
-                    item.querySelector(".delete-vendor").addEventListener("click", () => {
-                        if (confirm("Delete this vendor?")) {
-                            deleteDoc(doc(db, "vendorMappings", doc.id));
-                            showNotification("Vendor deleted!");
-                        }
-                    });
-                    list.appendChild(item);
+                    fragment.appendChild(item);
                 });
-            });
+                vendorMappingList.innerHTML = "";
+                vendorMappingList.appendChild(fragment);
+                if (!querySnapshot.size) vendorMappingList.innerHTML = "<p class='text-gray-400'>No mappings found.</p>";
+            } catch (error) {
+                console.error("Error loading vendor mappings:", error);
+                showNotification("Failed to load vendor mappings", "error");
+            }
+        }
+
+        function loadDashboard() {
+            try {
+                const now = Date.now();
+                const day = 24 * 60 * 60 * 1000;
+
+                const currentDate = new Date();
+                document.getElementById("current-date").textContent = currentDate.toLocaleDateString('en-US', {
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric'
+                });
+
+                let restaurantCount = 0, vendorCount = 0, orderCount = 0, userCount = 0;
+
+                onSnapshot(collection(db, "restaurant"), (snapshot) => {
+                    restaurantCount = snapshot.size;
+                    updateDashboard();
+                }, error => console.error("Restaurant snapshot error:", error));
+
+                onSnapshot(collection(db, "vendorMappings"), (snapshot) => {
+                    vendorCount = snapshot.size;
+                    updateDashboard();
+                }, error => console.error("Vendor snapshot error:", error));
+
+                onSnapshot(collection(db, "orders"), (snapshot) => {
+                    orderCount = snapshot.size;
+                    updateDashboard();
+                }, error => console.error("Orders snapshot error:", error));
+
+                onSnapshot(collection(db, "users"), (snapshot) => {
+                    userCount = snapshot.size;
+                    updateDashboard();
+                }, error => console.error("Users snapshot error:", error));
+
+                function updateDashboard() {
+                    dashboardGrid.innerHTML = "";
+                    const cards = [
+                        { id: "restaurants", title: "Restaurants", count: restaurantCount, icon: "fa-store", tooltip: "Total restaurants" },
+                        { id: "vendors", title: "Vendors", count: vendorCount, icon: "fa-user-tie", tooltip: "Total vendors" },
+                        { id: "orders", title: "Orders", count: orderCount, icon: "fa-shopping-cart", tooltip: "Total orders" },
+                        { id: "users", title: "Users", count: userCount, icon: "fa-users", tooltip: "Total users" }
+                    ];
+                    
+                    cards.forEach(card => {
+                        const div = document.createElement("div");
+                        div.className = `dashboard-card ${card.id}`;
+                        div.innerHTML = `
+                            <div class="tooltip">${card.tooltip}</div>
+                            <h3>${card.title}</h3>
+                            <div class="subtitle">Total Active</div>
+                            <p>${card.count}</p>
+                            <i class="fas ${card.icon}"></i>
+                        `;
+                        dashboardGrid.appendChild(div);
+                    });
+                }
+            } catch (error) {
+                console.error("Error loading dashboard:", error);
+                showNotification("Unable to load dashboard. Please try again.", "error");
+            }
         }
 
         function loadOrders() {
-            onSnapshot(collection(db, "orders"), async snap => {
-                const list = document.getElementById("orders-list");
-                list.innerHTML = "";
-                for (const doc of snap.docs) {
-                    const data = doc.data();
-                    const restSnap = await getDoc(doc(db, "restaurant", data.restaurantId));
-                    const items = data.items?.map(item => `${item.quantity}x ${item.name}`).join(", ") || "N/A";
-                    const item = document.createElement("div");
-                    item.className = "item";
-                    item.innerHTML = `
-                        <div>
-                            <h4>Order #${doc.id}</h4>
-                            <p>Restaurant: ${restSnap.exists() ? restSnap.data().name : "Unknown"}</p>
+            try {
+                onSnapshot(collection(db, "orders"), (snapshot) => {
+                    const fragment = document.createDocumentFragment();
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const items = data.items?.map(item => `${item.quantity}x ${item.name}`).join(", ") || "N/A";
+                        const item = document.createElement("div");
+                        item.className = "item";
+                        item.innerHTML = `
+                            <h4>Order ID: ${doc.id}</h4>
+                            <p>Restaurant: ${data.restaurantId}</p>
                             <p>Items: ${items}</p>
-                            <p>Hostel: ${data.deliveryDetails?.hostel || "N/A"}, Location: ${data.deliveryDetails?.location || "N/A"}</p>
-                            <p>Total: GH₵${(data.totalAmount || 0).toFixed(2)}</p>
-                            <p>Status: <span style="color: ${data.status === "delivered" ? "#34c759" : data.status === "not_delivered" ? "#ff3b30" : "#007aff"}">${data.status}</span></p>
-                        </div>
-                        <div class="actions">
-                            <button class="btn btn-edit edit-order" data-id="${doc.id}"><i class="fas fa-edit"></i> Edit</button>
-                            <button class="btn btn-danger delete-order" data-id="${doc.id}"><i class="fas fa-trash"></i> Delete</button>
-                        </div>
-                    `;
-                    item.querySelector(".edit-order").addEventListener("click", () => {
-                        showModal(`Edit Order #${doc.id}`, `
-                            <label class="block mb-2 text-sm font-medium">Status</label>
-                            <select id="order-status" class="input">
-                                <option value="pending" ${data.status === "pending" ? "selected" : ""}>Pending</option>
-                                <option value="being_delivered" ${data.status === "being_delivered" ? "selected" : ""}>Being Delivered</option>
-                                <option value="delivered" ${data.status === "delivered" ? "selected" : ""}>Delivered</option>
-                                <option value="not_delivered" ${data.status === "not_delivered" ? "selected" : ""}>Not Delivered</option>
-                            </select>
-                            <label class="block mb-2 text-sm font-medium">Hostel</label>
-                            <input id="order-hostel" class="input" value="${data.deliveryDetails?.hostel || ''}">
-                            <span id="order-hostel-error" class="error"></span>
-                            <label class="block mb-2 text-sm font-medium">Location</label>
-                            <input id="order-location" class="input" value="${data.deliveryDetails?.location || ''}">
-                            <span id="order-location-error" class="error"></span>
-                            <button type="submit" class="btn w-full mt-4"><i class="fas fa-save"></i> Save</button>
-                        `, async e => {
-                            e.preventDefault();
-                            const hostel = document.getElementById("order-hostel").value.trim();
-                            const location = document.getElementById("order-location").value.trim();
-                            if (!hostel) {
-                                document.getElementById("order-hostel-error").textContent = "Hostel is required";
-                                document.getElementById("order-hostel-error").classList.add("show");
-                                return;
-                            }
-                            if (!location) {
-                                document.getElementById("order-location-error").textContent = "Location is required";
-                                document.getElementById("order-location-error").classList.add("show");
-                                return;
-                            }
-                            await setDoc(doc(db, "orders", doc.id), {
-                                status: document.getElementById("order-status").value,
-                                deliveryDetails: {
-                                    hostel,
-                                    location,
-                                    contactNumber: data.deliveryDetails?.contactNumber || "",
-                                    deliveryNotes: data.deliveryDetails?.deliveryNotes || ""
-                                },
-                                timestamp: Date.now()
-                            }, { merge: true });
-                            showNotification("Order updated!");
-                            document.getElementById("modal").classList.remove("show");
+                            <p>Total: GH₵${data.totalAmount.toFixed(2)}</p>
+                            <p>Status: ${data.status}</p>
+                            <p>Time: ${new Date(data.timestamp).toLocaleString()}</p>
+                            <button class="btn btn-secondary delete-order" data-id="${doc.id}">Delete</button>
+                        `;
+                        item.querySelector(".delete-order").addEventListener("click", () => {
+                            if (confirm(`Are you sure you want to delete order ID: ${doc.id}?`)) deleteOrder(doc.id);
                         });
+                        fragment.appendChild(item);
                     });
-                    item.querySelector(".delete-order").addEventListener("click", () => {
-                        if (confirm("Delete this order?")) {
-                            deleteDoc(doc(db, "orders", doc.id));
-                            showNotification("Order deleted!");
-                        }
-                    });
-                    list.appendChild(item);
-                }
-            });
+                    ordersList.innerHTML = "";
+                    ordersList.appendChild(fragment);
+                    if (!snapshot.size) ordersList.innerHTML = "<p class='text-gray-400'>No orders found.</p>";
+                }, error => console.error("Orders snapshot error:", error));
+            } catch (error) {
+                console.error("Error loading orders:", error);
+                showNotification("Failed to load orders", "error");
+            }
         }
 
-        function loadUsers() {
-            onSnapshot(collection(db, "users"), snap => {
-                const list = document.getElementById("users-list");
-                list.innerHTML = "";
-                snap.forEach(doc => {
+        async function loadUsers() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "users"));
+                const fragment = document.createDocumentFragment();
+                querySnapshot.forEach(doc => {
                     const data = doc.data();
                     const item = document.createElement("div");
-                    item.className = "item";
+                    item.className = "user-item";
                     item.innerHTML = `
-                        <div>
-                            <h4>${data.email}</h4>
-                            <p>Name: ${data.name || "N/A"}</p>
+                        <div class="user-details">
+                            <h4>User ID: ${doc.id}</h4>
+                            <p>${JSON.stringify(data, null, 2)
+                                .replace(/"/g, '')
+                                .replace(/{/g, '')
+                                .replace(/}/g, '')
+                                .replace(/,/g, '')
+                                .split('\n')
+                                .map(line => line.trim())
+                                .filter(line => line)
+                                .join('<br>')}</p>
                         </div>
-                        <div class="actions">
-                            <button class="btn btn-edit edit-user" data-id="${doc.id}"><i class="fas fa-edit"></i> Edit</button>
-                            <button class="btn btn-danger delete-user" data-id="${doc.id}"><i class="fas fa-trash"></i> Delete</button>
+                        <div class="user-actions">
+                            <button class="btn btn-secondary delete-user" data-id="${doc.id}">Delete</button>
                         </div>
                     `;
-                    item.querySelector(".edit-user").addEventListener("click", () => {
-                        showModal(`Edit User: ${data.email}`, `
-                            <label class="block mb-2 text-sm font-medium">Name</label>
-                            <input id="user-name" class="input" value="${data.name || ''}">
-                            <span id="user-name-error" class="error"></span>
-                            <label class="block mb-2 text-sm font-medium">Email</label>
-                            <input id="user-email" class="input" value="${data.email}" required>
-                            <span id="user-email-error" class="error"></span>
-                            <button type="submit" class="btn w-full mt-4"><i class="fas fa-save"></i> Save</button>
-                        `, async e => {
-                            e.preventDefault();
-                            const email = document.getElementById("user-email").value.trim();
-                            if (!email) {
-                                document.getElementById("user-email-error").textContent = "Email is required";
-                                document.getElementById("user-email-error").classList.add("show");
-                                return;
-                            }
-                            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                                document.getElementById("user-email-error").textContent = "Invalid email format";
-                                document.getElementById("user-email-error").classList.add("show");
-                                return;
-                            }
-                            await setDoc(doc(db, "users", doc.id), {
-                                name: document.getElementById("user-name").value.trim(),
-                                email,
-                                timestamp: Date.now()
-                            }, { merge: true });
-                            showNotification("User updated!");
-                            document.getElementById("modal").classList.remove("show");
-                        });
-                    });
                     item.querySelector(".delete-user").addEventListener("click", () => {
-                        if (confirm("Delete this user?")) {
-                            deleteDoc(doc(db, "users", doc.id));
-                            showNotification("User deleted!");
-                        }
+                        if (confirm(`Are you sure you want to delete user ID: ${doc.id}?`)) deleteUser(doc.id);
                     });
-                    list.appendChild(item);
+                    fragment.appendChild(item);
                 });
-            });
+                usersList.innerHTML = "";
+                usersList.appendChild(fragment);
+                if (!querySnapshot.size) usersList.innerHTML = "<p class='text-gray-400'>No users found.</p>";
+            } catch (error) {
+                console.error("Error loading users:", error);
+                showNotification("Failed to load users", "error");
+            }
         }
+
+        async function deleteRestaurant(id) {
+            try {
+                await deleteDoc(doc(db, "restaurant", id));
+                showNotification("Restaurant successfully deleted!");
+                loadRestaurants();
+            } catch (error) {
+                console.error("Error deleting restaurant:", error);
+                showNotification("Unable to delete restaurant. Please try again.", "error");
+            }
+        }
+
+        async function deleteVendorMapping(id) {
+            try {
+                await deleteDoc(doc(db, "vendorMappings", id));
+                showNotification("Vendor mapping successfully deleted!");
+                loadVendorMappings();
+            } catch (error) {
+                console.error("Error deleting vendor mapping:", error);
+                showNotification("Unable to delete vendor mapping. Please try again.", "error");
+            }
+        }
+
+        async function deleteOrder(id) {
+            try {
+                await deleteDoc(doc(db, "orders", id));
+                showNotification("Order successfully deleted!");
+            } catch (error) {
+                console.error("Error deleting order:", error);
+                showNotification("Unable to delete order. Please try again.", "error");
+            }
+        }
+
+        async function deleteUser(id) {
+            try {
+                await deleteDoc(doc(db, "users", id));
+                showNotification("User successfully deleted!");
+                loadUsers();
+            } catch (error) {
+                console.error("Error deleting user:", error);
+                showNotification("Unable to delete user. Please try again.", "error");
+            }
+        }
+
+        document.getElementById("restaurant-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            try {
+                const name = document.getElementById("restaurant-name").value;
+                const image = document.getElementById("restaurant-image").value;
+                const deliveryTime = document.getElementById("delivery-time").value;
+                
+                if (!name.trim()) {
+                    showNotification("Please enter a restaurant name.", "error");
+                    return;
+                }
+                
+                if (deliveryTime && isNaN(deliveryTime) || deliveryTime < 0) {
+                    showNotification("Please enter a valid delivery time.", "error");
+                    return;
+                }
+
+                const docRef = await addDoc(collection(db, "restaurant"), { 
+                    name, 
+                    image, 
+                    deliveryTime: deliveryTime ? Number(deliveryTime) : null,
+                    isOpen: false, 
+                    timestamp: Date.now() 
+                });
+                showNotification(`Restaurant "${name}" has been added successfully!`);
+                document.getElementById("restaurant-name").value = "";
+                document.getElementById("restaurant-image").value = "";
+                document.getElementById("delivery-time").value = "";
+                loadRestaurants();
+            } catch (error) {
+                console.error("Error adding restaurant:", error);
+                showNotification("Unable to add restaurant. Please try again.", "error");
+            }
+        });
+
+        document.getElementById("vendor-mapping-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            try {
+                const email = document.getElementById("vendor-email").value.trim();
+                const restaurantId = document.getElementById("vendor-restaurant-id").value.trim();
+                
+                if (!email) {
+                    showNotification("Please enter a vendor email.", "error");
+                    return;
+                }
+                
+                if (!restaurantId) {
+                    showNotification("Please enter a restaurant ID.", "error");
+                    return;
+                }
+                
+                await setDoc(doc(db, "vendorMappings", email), { restaurantId, timestamp: Date.now() });
+                showNotification(`Vendor "${email}" has been mapped successfully!`);
+                document.getElementById("vendor-email").value = "";
+                document.getElementById("vendor-restaurant-id").value = "";
+                loadVendorMappings();
+            } catch (error) {
+                console.error("Error adding vendor mapping:", error);
+                showNotification("Unable to add vendor mapping. Please try again.", "error");
+            }
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            try {
+                if (user && adminEmails.includes(user.email)) {
+                    console.log("Admin logged in:", user.email);
+                    loadingScreen.style.display = "none";
+                    loginSection.style.display = "none";
+                    mainContent.classList.remove("hidden");
+                    loadDashboard();
+                    loadRestaurants();
+                    loadVendorMappings();
+                    loadOrders();
+                    loadUsers();
+                } else {
+                    console.log("No admin user detected");
+                    loadingScreen.style.display = "none";
+                    loginSection.style.display = "flex";
+                    mainContent.classList.add("hidden");
+                    if (user) {
+                        signOut(auth);
+                        showLoginNotification("Unauthorized: Not an admin!", "error");
+                    }
+                }
+            } catch (error) {
+                console.error("Auth state change error:", error);
+                showLoginNotification("Authentication error", "error");
+                loadingScreen.style.display = "none";
+                loginSection.style.display = "flex";
+            }
+        }, error => {
+            console.error("Auth listener error:", error);
+            loadingScreen.style.display = "none";
+            loginSection.style.display = "flex";
+        });
+
+        document.getElementById("login-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if (loginBtn) {
+                loginBtn.disabled = true;
+                if (loginSpinner) loginSpinner.style.display = 'inline-block';
+            }
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    if (adminEmails.includes(user.email)) {
+                        loginSection.classList.add("hidden");
+                        mainContent.classList.remove("hidden");
+                        loadDashboard();
+                    } else {
+                        showNotification("You do not have admin privileges", "error", loginNotification);
+                        signOut(auth);
+                        if (loginBtn) loginBtn.disabled = false;
+                        if (loginSpinner) loginSpinner.style.display = 'none';
+                    }
+                })
+                .catch((error) => {
+                    if (loginBtn) loginBtn.disabled = false;
+                    if (loginSpinner) loginSpinner.style.display = 'none';
+                    console.error("Login error:", error);
+                    showNotification(error.message, "error", loginNotification);
+                });
+        });
 
         document.getElementById("dashboard-btn").addEventListener("click", () => { toggleSection("dashboard"); loadDashboard(); });
         document.getElementById("restaurants-btn").addEventListener("click", () => { toggleSection("restaurants"); loadRestaurants(); });
-        document.getElementById("vendors-btn").addEventListener("click", () => { toggleSection("vendors"); loadVendors(); });
+        document.getElementById("vendor-mappings-btn").addEventListener("click", () => { toggleSection("vendor-mappings"); loadVendorMappings(); });
         document.getElementById("orders-btn").addEventListener("click", () => { toggleSection("orders"); loadOrders(); });
         document.getElementById("users-btn").addEventListener("click", () => { toggleSection("users"); loadUsers(); });
         document.getElementById("settings-btn").addEventListener("click", () => { toggleSection("settings"); });
 
-        document.getElementById("add-restaurant").addEventListener("click", () => {
-            showModal("Add Restaurant", `
-                <label class="block mb-2 text-sm font-medium">Name</label>
-                <input id="rest-name" class="input" placeholder="Name" required>
-                <span id="rest-name-error" class="error"></span>
-                <label class="block mb-2 text-sm font-medium">Image URL</label>
-                <input id="rest-image" class="input" placeholder="Image URL">
-                <button type="submit" class="btn w-full mt-4"><i class="fas fa-plus"></i> Add</button>
-            `, async e => {
-                e.preventDefault();
-                const name = document.getElementById("rest-name").value.trim();
-                if (!name) {
-                    document.getElementById("rest-name-error").textContent = "Name is required";
-                    document.getElementById("rest-name-error").classList.add("show");
-                    return;
-                }
-                const docRef = doc(collection(db, "restaurant"));
-                await setDoc(docRef, {
-                    name,
-                    image: document.getElementById("rest-image").value,
-                    isOpen: true,
-                    revenue: 0,
-                    timestamp: Date.now()
-                });
-                showNotification(`Restaurant added! ID: ${docRef.id}`);
-                document.getElementById("modal").classList.remove("show");
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.error('Service Worker registration failed:', error);
+                    });
             });
-        });
-
-        document.getElementById("add-vendor").addEventListener("click", () => {
-            showModal("Add Vendor", `
-                <label class="block mb-2 text-sm font-medium">Email</label>
-                <input id="vendor-email" class="input" placeholder="Email" required>
-                <span id="vendor-email-error" class="error"></span>
-                <label class="block mb-2 text-sm font-medium">Restaurant ID</label>
-                <input id="vendor-restid" class="input" placeholder="Restaurant ID" required>
-                <span id="vendor-restid-error" class="error"></span>
-                <button type="submit" class="btn w-full mt-4"><i class="fas fa-plus"></i> Add</button>
-            `, async e => {
-                e.preventDefault();
-                const email = document.getElementById("vendor-email").value.trim();
-                const restId = document.getElementById("vendor-restid").value.trim();
-                if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                    document.getElementById("vendor-email-error").textContent = "Valid email is required";
-                    document.getElementById("vendor-email-error").classList.add("show");
-                    return;
-                }
-                const restSnap = await getDoc(doc(db, "restaurant", restId));
-                if (!restSnap.exists()) {
-                    document.getElementById("vendor-restid-error").textContent = "Invalid Restaurant ID";
-                    document.getElementById("vendor-restid-error").classList.add("show");
-                    return;
-                }
-                await setDoc(doc(db, "vendorMappings", email), {
-                    restaurantId: restId,
-                    timestamp: Date.now()
-                });
-                showNotification("Vendor added!");
-                document.getElementById("modal").classList.remove("show");
-            });
-        });
-
-        document.getElementById("settings-form").addEventListener("submit", async e => {
-            e.preventDefault();
-            const email = document.getElementById("contact-email").value.trim();
-            const whatsapp = document.getElementById("whatsapp").value.trim();
-            const fee = parseFloat(document.getElementById("platform-fee").value);
-            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                document.getElementById("contact-email-error").textContent = "Valid email is required";
-                document.getElementById("contact-email-error").classList.add("show");
-                return;
-            }
-            if (!whatsapp || !/^\+\d{10,15}$/.test(whatsapp)) {
-                document.getElementById("whatsapp-error").textContent = "Valid WhatsApp number is required (e.g., +1234567890)";
-                document.getElementById("whatsapp-error").classList.add("show");
-                return;
-            }
-            if (isNaN(fee) || fee < 0 || fee > 100) {
-                document.getElementById("platform-fee-error").textContent = "Fee must be between 0 and 100";
-                document.getElementById("platform-fee-error").classList.add("show");
-                return;
-            }
-            await setDoc(doc(db, "settings", "global"), {
-                contactEmail: email,
-                whatsapp,
-                platformFee: fee,
-                timestamp: Date.now()
-            });
-            showNotification("Settings saved!");
-        });
-
-        document.getElementById("logout-btn").addEventListener("click", async () => {
-            await signOut(auth);
-            showNotification("Logged out!");
-            window.location = "login.html";
-        });
-
-        document.querySelector(".hamburger").addEventListener("click", () => {
-            document.getElementById("sidebar").classList.toggle("show");
-            document.getElementById("main-content").classList.toggle("full");
-        });
-
-        onAuthStateChanged(auth, async user => {
-            if (!user) {
-                setTimeout(() => {
-                    if (!auth.currentUser) {
-                        window.location = "login.html";
-                    }
-                }, 1000);
-                return;
-            }
-            try {
-                const adminRef = doc(db, "admins", user.email);
-                const adminSnap = await getDoc(adminRef);
-                if (!adminSnap.exists()) {
-                    showNotification("Not an admin!", "error");
-                    await signOut(auth);
-                    window.location = "login.html";
-                } else {
-                    document.getElementById("main-content").classList.remove("hidden");
-                    loadDashboard();
-                }
-            } catch (error) {
-                console.error("Auth check error:", error);
-                showNotification("Error verifying admin status", "error");
-            }
-        });
+        }
     </script>
 </body>
 </html>
