@@ -224,7 +224,7 @@
             border-radius: 10px;
             cursor: pointer;
             z-index: 1100;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             transition: all 0.3s ease;
         }
         .sidebar-toggle:hover {
@@ -495,12 +495,7 @@
         .welcome-text {
             flex: 1;
         }
-        .welcome-text h2 {
-            font-size: clamp(1.3rem, 3vw, 1.7rem);
-            color: #ffffff;
-            margin-bottom: 8px;
-            text-align: left;
-        }
+        
         .welcome-text p {
             font-size: 0.95rem;
             color: #a0a0a0;
@@ -597,6 +592,7 @@
     </button>
 
     <div class="sidebar" id="sidebar">
+        <p></p><br><br>
         <button id="dashboard-btn" class="active"><i class="fas fa-chart-line"></i> Dashboard</button>
         <button id="restaurants-btn"><i class="fas fa-store"></i> Restaurants</button>
         <button id="vendor-mappings-btn"><i class="fas fa-user-tie"></i> Vendors</button>
@@ -639,7 +635,6 @@
         <div id="dashboard" class="section">
             <div class="welcome-message">
                 <div class="welcome-text">
-                    <h2>Welcome to Chawp Admin</h2>
                     <p>Here's what's happening with your platform today</p>
                 </div>
                 <div class="date-display" id="current-date">Loading...</div>
@@ -652,7 +647,7 @@
             <form id="restaurant-form" class="mb-6">
                 <input type="text" id="restaurant-name" placeholder="Restaurant Name" class="input">
                 <input type="text" id="restaurant-image" placeholder="Image URL" class="input">
-                <input type="number" id="delivery-time" placeholder="Delivery Time (minutes)" class="input" min="0">
+                <input type="number" id="delivery_time" placeholder="Delivery Time (minutes)" class="input" min="0">
                 <button type="submit" class="btn w-full">Add Restaurant</button>
             </form>
             <div id="restaurant-list"></div>
@@ -817,7 +812,7 @@
                         <h4>${data.name || "Unnamed"}</h4>
                         <p>ID: ${doc.id}</p>
                         <p>Image: ${data.image || "None"}</p>
-                        <p>Delivery Time: ${data.deliveryTime || "Not set"} minutes</p>
+                        <p>Delivery Time: ${data.delivery_time || "Not set"} minutes</p>
                         <p>Status: ${data.isOpen ? "Open" : "Closed"}</p>
                         <button class="btn btn-secondary delete-restaurant" data-id="${doc.id}">Delete</button>
                     `;
@@ -1045,14 +1040,14 @@
             try {
                 const name = document.getElementById("restaurant-name").value;
                 const image = document.getElementById("restaurant-image").value;
-                const deliveryTime = document.getElementById("delivery-time").value;
+                const delivery_time = document.getElementById("delivery_time").value;
                 
                 if (!name.trim()) {
                     showNotification("Please enter a restaurant name.", "error");
                     return;
                 }
                 
-                if (deliveryTime && isNaN(deliveryTime) || deliveryTime < 0) {
+                if (delivery_time && isNaN(delivery_time) || delivery_time < 0) {
                     showNotification("Please enter a valid delivery time.", "error");
                     return;
                 }
@@ -1060,14 +1055,14 @@
                 const docRef = await addDoc(collection(db, "restaurant"), { 
                     name, 
                     image, 
-                    deliveryTime: deliveryTime ? Number(deliveryTime) : null,
+                    delivery_time: delivery_time ? Number(delivery_time) : null,
                     isOpen: false, 
                     timestamp: Date.now() 
                 });
                 showNotification(`Restaurant "${name}" has been added successfully!`);
                 document.getElementById("restaurant-name").value = "";
                 document.getElementById("restaurant-image").value = "";
-                document.getElementById("delivery-time").value = "";
+                document.getElementById("delivery_time").value = "";
                 loadRestaurants();
             } catch (error) {
                 console.error("Error adding restaurant:", error);
