@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    
     <title>Chawp Admin Portal</title>
     <link rel="manifest" href="/manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -580,6 +584,18 @@
             50% { transform: scale(1.2); opacity: 0.3; }
             100% { transform: scale(1); opacity: 0.5; }
         }
+        html, body {
+    height: 100%;
+    min-height: -webkit-fill-available;
+    overscroll-behavior-y: none;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    touch-action: manipulation;
+}
+body::-webkit-scrollbar {
+    display: none;
+}
     </style>
 </head>
 <body>
