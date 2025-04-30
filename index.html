@@ -805,7 +805,9 @@
             <h2 class="text-2xl font-semibold mb-4">Vendor Mappings</h2>
             <form id="vendor-mapping-form" class="mb-6">
                 <input type="email" id="vendor-email" placeholder="Vendor Email" class="input">
-                <input type="text" id="vendor-restaurant-id" placeholder="Restaurant ID" class="input">
+                <select id="vendor-restaurant" class="input">
+                    <option value="" disabled selected>Select Restaurant</option>
+                </select>
                 <button type="submit" class="btn w-full">Add Mapping</button>
             </form>
             <div id="vendor-mapping-list"></div>
@@ -978,6 +980,33 @@
     closeSidebar();
 }
 
+async function loadRestaurantsForDropdown() {
+    try {
+        const vendorSnapshot = await getDocs(collection(db, "vendorMappings"));
+        const mappedRestaurantIds = vendorSnapshot.docs.map(doc => doc.data().restaurantId);
+        
+        const restaurantSnapshot = await getDocs(collection(db, "restaurant"));
+        const dropdown = document.getElementById("vendor-restaurant");
+        dropdown.innerHTML = '<option value="" disabled selected>Select Restaurant</option>';
+        
+        restaurantSnapshot.forEach(doc => {
+            if (!mappedRestaurantIds.includes(doc.id)) {
+                const option = document.createElement("option");
+                option.value = doc.id;
+                option.textContent = doc.data().name || "Unnamed";
+                dropdown.appendChild(option);
+            }
+        });
+        
+        if (dropdown.options.length === 1) {
+            dropdown.innerHTML += '<option value="" disabled>No unmapped restaurants</option>';
+        }
+    } catch (error) {
+        console.error("Error loading restaurants for dropdown:", error);
+        showNotification("Failed to load restaurants for mapping", "error");
+    }
+}
+
         async function loadRestaurants() {
             try {
                 const querySnapshot = await getDocs(collection(db, "restaurant"));
@@ -1089,31 +1118,32 @@ document.getElementById("back-to-edit-restaurant").addEventListener("click", () 
         });
 
         async function loadVendorMappings() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "vendorMappings"));
-                const fragment = document.createDocumentFragment();
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    const item = document.createElement("div");
-                    item.className = "item";
-                    item.innerHTML = `
-                        <h4>${doc.id}</h4>
-                        <p>Restaurant ID: ${data.restaurantId}</p>
-                        <button class="btn btn-secondary delete-mapping" data-id="${doc.id}">Delete</button>
-                    `;
-                    item.querySelector(".delete-mapping").addEventListener("click", () => {
-                        if (confirm(`Are you sure you want to delete vendor mapping for email: ${doc.id}?`)) deleteVendorMapping(doc.id);
-                    });
-                    fragment.appendChild(item);
-                });
-                vendorMappingList.innerHTML = "";
-                vendorMappingList.appendChild(fragment);
-                if (!querySnapshot.size) vendorMappingList.innerHTML = "<p class='text-gray-400'>No mappings found.</p>";
-            } catch (error) {
-                console.error("Error loading vendor mappings:", error);
-                showNotification("Failed to load vendor mappings", "error");
-            }
-        }
+    try {
+        const querySnapshot = await getDocs(collection(db, "vendorMappings"));
+        const fragment = document.createDocumentFragment();
+        querySnapshot.forEach(doc => {
+            const data = doc.data();
+            const item = document.createElement("div");
+            item.className = "item";
+            item.innerHTML = `
+                <h4>${doc.id}</h4>
+                <p>Restaurant ID: ${data.restaurantId}</p>
+                <button class="btn btn-secondary delete-mapping" data-id="${doc.id}">Delete</button>
+            `;
+            item.querySelector(".delete-mapping").addEventListener("click", () => {
+                if (confirm(`Are you sure you want to delete vendor mapping for email: ${doc.id}?`)) deleteVendorMapping(doc.id);
+            });
+            fragment.appendChild(item);
+        });
+        vendorMappingList.innerHTML = "";
+        vendorMappingList.appendChild(fragment);
+        if (!querySnapshot.size) vendorMappingList.innerHTML = "<p class='text-gray-400'>No mappings found.</p>";
+        loadRestaurantsForDropdown();
+    } catch (error) {
+        console.error("Error loading vendor mappings:", error);
+        showNotification("Failed to load vendor mappings", "error");
+    }
+}
 
         async function loadMenuItems(restaurantId) {
     try {
@@ -1369,15 +1399,16 @@ document.getElementById("menu-item-form").addEventListener("submit", async (e) =
         }
 
         async function deleteVendorMapping(id) {
-            try {
-                await deleteDoc(doc(db, "vendorMappings", id));
-                showNotification("Vendor mapping successfully deleted!");
-                loadVendorMappings();
-            } catch (error) {
-                console.error("Error deleting vendor mapping:", error);
-                showNotification("Unable to delete vendor mapping. Please try again.", "error");
-            }
-        }
+    try {
+        await deleteDoc(doc(db, "vendorMappings", id));
+        showNotification("Vendor mapping successfully deleted!");
+        loadVendorMappings();
+        loadRestaurantsForDropdown();
+    } catch (error) {
+        console.error("Error deleting vendor mapping:", error);
+        showNotification("Unable to delete vendor mapping. Please try again.", "error");
+    }
+}
 
         async function deleteOrder(id) {
             try {
@@ -1436,31 +1467,34 @@ document.getElementById("menu-item-form").addEventListener("submit", async (e) =
         });
 
         document.getElementById("vendor-mapping-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            try {
-                const email = document.getElementById("vendor-email").value.trim();
-                const restaurantId = document.getElementById("vendor-restaurant-id").value.trim();
-                
-                if (!email) {
-                    showNotification("Please enter a vendor email.", "error");
-                    return;
-                }
-                
-                if (!restaurantId) {
-                    showNotification("Please enter a restaurant ID.", "error");
-                    return;
-                }
-                
-                await setDoc(doc(db, "vendorMappings", email), { restaurantId, timestamp: Date.now() });
-                showNotification(`Vendor "${email}" has been mapped successfully!`);
-                document.getElementById("vendor-email").value = "";
-                document.getElementById("vendor-restaurant-id").value = "";
-                loadVendorMappings();
-            } catch (error) {
-                console.error("Error adding vendor mapping:", error);
-                showNotification("Unable to add vendor mapping. Please try again.", "error");
-            }
-        });
+    e.preventDefault();
+    try {
+        const email = document.getElementById("vendor-email").value.trim();
+        const restaurantId = document.getElementById("vendor-restaurant").value;
+        
+        if (!email) {
+            showNotification("Please enter a vendor email.", "error");
+            return;
+        }
+        
+        if (!restaurantId) {
+            showNotification("Please select a restaurant.", "error");
+            return;
+        }
+        
+        await setDoc(doc(db, "vendorMappings", email), { restaurantId, timestamp: Date.now() });
+        showNotification(`Vendor "${email}" has been mapped successfully!`);
+        document.getElementById("vendor-email").value = "";
+        document.getElementById("vendor-restaurant").value = "";
+        loadVendorMappings();
+        loadRestaurantsForDropdown();
+    } catch (error) {
+        console.error("Error adding vendor mapping:", error);
+        showNotification("Unable to add vendor mapping. Please try again.", "error");
+    }
+});
+
+
 
         // Delivery Section Functions
         async function getRestaurantName(restaurantId) {
@@ -1828,6 +1862,12 @@ document.getElementById("menu-item-form").addEventListener("submit", async (e) =
                     });
             });
         }
+
+        document.getElementById("vendor-mappings-btn").addEventListener("click", () => { 
+    toggleSection("vendor-mappings"); 
+    loadVendorMappings(); 
+    loadRestaurantsForDropdown(); 
+});
 
         document.getElementById("logout-btn").addEventListener("click", () => {
     signOut(auth).then(() => {
