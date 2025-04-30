@@ -124,9 +124,18 @@
         .btn-secondary { 
             background: #30c8ff; 
             padding: 8px 18px; 
+            width: auto;
         }
         .btn-secondary:hover { 
             background: #26a5dc; 
+        }
+        .btn-tertiary {
+            background: #6b7280;
+            padding: 8px 18px;
+            width: auto;
+        }
+        .btn-tertiary:hover {
+            background: #4b5563;
         }
         .input { 
             background: #343436; 
@@ -197,10 +206,15 @@
             font-size: clamp(0.85rem, 2vw, 0.95rem); 
             color: #d0d0d0; 
         }
+        .item-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
         .sidebar {
             position: fixed;
             top: 0;
-            left: -250px; /* Hidden by default */
+            left: -250px;
             width: 250px;
             height: 100%;
             background: rgba(44, 44, 46, 0.95);
@@ -414,6 +428,10 @@
             background: linear-gradient(90deg, #AF52DE, #5E5CE6); 
             box-shadow: 0 0 15px rgba(175, 82, 222, 0.3);
         }
+        .dashboard-card.deliveries:after { 
+            background: linear-gradient(90deg, #FF2D55, #FF9500); 
+            box-shadow: 0 0 15px rgba(255, 45, 85, 0.3);
+        }
         .dashboard-card h3 {
             font-size: clamp(1.1rem, 2.5vw, 1.3rem);
             font-weight: 600;
@@ -438,6 +456,7 @@
         .dashboard-card.vendors p { background: linear-gradient(45deg, #5AC8FA, #007AFF); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .dashboard-card.orders p { background: linear-gradient(45deg, #34C759, #32D74B); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .dashboard-card.users p { background: linear-gradient(45deg, #AF52DE, #5E5CE6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .dashboard-card.deliveries p { background: linear-gradient(45deg, #FF2D55, #FF9500); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .dashboard-card i {
             position: absolute;
             bottom: 10px;
@@ -499,7 +518,6 @@
         .welcome-text {
             flex: 1;
         }
-        
         .welcome-text p {
             font-size: 0.95rem;
             color: #a0a0a0;
@@ -532,6 +550,67 @@
         .password-toggle:hover {
             color: #ffffff;
         }
+        .personnel-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: clamp(0.85rem, 2vw, 0.95rem);
+            color: #d0d0d0;
+        }
+        .personnel-table th,
+        .personnel-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .personnel-table th {
+            color: #ffffff;
+            font-weight: 600;
+        }
+        .personnel-table .btn-secondary {
+            width: auto;
+            padding: 6px 12px;
+            font-size: 0.9rem;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin: 10px 0;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #34C759;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
         @media (max-width: 768px) {
             .container { 
                 padding: 20px 15px; 
@@ -552,6 +631,8 @@
             #login-section .login-container { padding: 30px; }
             .user-item { grid-template-columns: 1fr; }
             .user-actions { margin-top: 10px; justify-content: flex-end; }
+            .personnel-table { font-size: 0.8rem; }
+            .personnel-table th, .personnel-table td { padding: 8px; }
         }
         @media (max-width: 480px) {
             .container { 
@@ -574,6 +655,8 @@
                 padding: 20px; 
                 max-width: 90%; 
             }
+            .personnel-table { font-size: 0.75rem; }
+            .personnel-table th, .personnel-table td { padding: 6px; }
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(-20px); }
@@ -585,17 +668,17 @@
             100% { transform: scale(1); opacity: 0.5; }
         }
         html, body {
-    height: 100%;
-    min-height: -webkit-fill-available;
-    overscroll-behavior-y: none;
-    overflow-x: hidden;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    touch-action: manipulation;
-}
-body::-webkit-scrollbar {
-    display: none;
-}
+            height: 100%;
+            min-height: -webkit-fill-available;
+            overscroll-behavior-y: none;
+            overflow-x: hidden;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            touch-action: manipulation;
+        }
+        body::-webkit-scrollbar {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -614,6 +697,7 @@ body::-webkit-scrollbar {
         <button id="vendor-mappings-btn"><i class="fas fa-user-tie"></i> Vendors</button>
         <button id="orders-btn"><i class="fas fa-shopping-cart"></i> Orders</button>
         <button id="users-btn"><i class="fas fa-users"></i> Users</button>
+        <button id="delivery-btn"><i class="fas fa-motorcycle"></i> Delivery</button>
         <button id="settings-btn"><i class="fas fa-cog"></i> Settings</button>
     </div>
 
@@ -669,6 +753,25 @@ body::-webkit-scrollbar {
             <div id="restaurant-list"></div>
         </div>
 
+        <div id="edit-restaurant" class="section hidden">
+            <h2 class="text-2xl font-semibold mb-4">Edit Restaurant</h2>
+            <form id="edit-restaurant-form" class="mb-6">
+                <input type="hidden" id="edit-restaurant-id">
+                <input type="text" id="edit-restaurant-name" placeholder="Restaurant Name" class="input">
+                <input type="text" id="edit-restaurant-image" placeholder="Image URL" class="input">
+                <input type="number" id="edit-delivery-time" placeholder="Delivery Time (minutes)" class="input" min="0">
+                <div class="toggle-switch">
+                    <input type="checkbox" id="edit-restaurant-status">
+                    <label class="slider" for="edit-restaurant-status"></label>
+                </div>
+                <p>Status: <span id="status-text">Closed</span></p>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn">Save Changes</button>
+                    <button type="button" id="cancel-edit" class="btn btn-tertiary">Cancel</button>
+                </div>
+            </form>
+        </div>
+
         <div id="vendor-mappings" class="section hidden">
             <h2 class="text-2xl font-semibold mb-4">Vendor Mappings</h2>
             <form id="vendor-mapping-form" class="mb-6">
@@ -689,6 +792,17 @@ body::-webkit-scrollbar {
             <div id="users-list"></div>
         </div>
 
+        <div id="delivery" class="section hidden">
+            <h2 class="text-2xl font-semibold mb-4">Delivery Management</h2>
+            <div class="dashboard-grid" id="delivery-dashboard"></div>
+            <h2 class="text-xl font-semibold mb-4">Active Deliveries</h2>
+            <div id="active-delivery-list">Loading active deliveries...</div>
+            <h2 class="text-xl font-semibold mb-4">Delivery History</h2>
+            <div id="delivery-history-list">Loading delivery history...</div>
+            <h2 class="text-xl font-semibold mb-4">Delivery Personnel</h2>
+            <div id="personnel-list">Loading delivery personnel...</div>
+        </div>
+
         <div id="settings" class="section hidden">
             <h2 class="text-2xl font-semibold mb-4">Settings</h2>
             <p>Settings are currently unavailable.</p>
@@ -698,7 +812,7 @@ body::-webkit-scrollbar {
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { 
-            getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, deleteDoc, updateDoc, query, onSnapshot 
+            getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, deleteDoc, updateDoc, query, onSnapshot, where
         } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
         import { 
             getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence 
@@ -749,6 +863,20 @@ body::-webkit-scrollbar {
         const sidebar = document.getElementById("sidebar");
         const sidebarToggle = document.getElementById("sidebar-toggle");
         const overlay = document.getElementById("overlay");
+        const deliveryDashboard = document.getElementById("delivery-dashboard");
+        const activeDeliveryList = document.getElementById("active-delivery-list");
+        const deliveryHistoryList = document.getElementById("delivery-history-list");
+        const personnelList = document.getElementById("personnel-list");
+
+        // Force hide loading screen after 5 seconds if Firebase doesn't respond
+        setTimeout(() => {
+            if (loadingScreen && loadingScreen.style.display !== "none") {
+                console.warn("Loading screen timeout: Forcing login section display");
+                loadingScreen.style.display = "none";
+                loginSection.style.display = "flex";
+                showLoginNotification("Loading took too long. Please try logging in.", "error");
+            }
+        }, 5000);
 
         function toggleSidebar() {
             sidebar.classList.toggle("open");
@@ -802,7 +930,7 @@ body::-webkit-scrollbar {
         }
 
         function toggleSection(sectionId) {
-            const sections = ["dashboard", "restaurants", "vendor-mappings", "orders", "users", "settings"];
+            const sections = ["dashboard", "restaurants", "vendor-mappings", "orders", "users", "delivery", "settings", "edit-restaurant"];
             sections.forEach(id => {
                 const section = document.getElementById(id);
                 if (section) {
@@ -813,7 +941,7 @@ body::-webkit-scrollbar {
                     btn.classList.toggle("active", id === sectionId);
                 }
             });
-            closeSidebar(); // Close sidebar after selecting an option
+            closeSidebar();
         }
 
         async function loadRestaurants() {
@@ -830,8 +958,12 @@ body::-webkit-scrollbar {
                         <p>Image: ${data.image || "None"}</p>
                         <p>Delivery Time: ${data.delivery_time || "Not set"} minutes</p>
                         <p>Status: ${data.isOpen ? "Open" : "Closed"}</p>
-                        <button class="btn btn-secondary delete-restaurant" data-id="${doc.id}">Delete</button>
+                        <div class="item-actions">
+                            <button class="btn btn-secondary edit-restaurant" data-id="${doc.id}">Edit</button>
+                            <button class="btn btn-secondary delete-restaurant" data-id="${doc.id}">Delete</button>
+                        </div>
                     `;
+                    item.querySelector(".edit-restaurant").addEventListener("click", () => editRestaurant(doc.id));
                     item.querySelector(".delete-restaurant").addEventListener("click", () => {
                         if (confirm(`Are you sure you want to delete restaurant ID: ${doc.id}?`)) deleteRestaurant(doc.id);
                     });
@@ -845,6 +977,70 @@ body::-webkit-scrollbar {
                 showNotification("Failed to load restaurants", "error");
             }
         }
+
+        async function editRestaurant(id) {
+            try {
+                const restaurantDoc = await getDoc(doc(db, "restaurant", id));
+                if (restaurantDoc.exists()) {
+                    const data = restaurantDoc.data();
+                    document.getElementById("edit-restaurant-id").value = id;
+                    document.getElementById("edit-restaurant-name").value = data.name || "";
+                    document.getElementById("edit-restaurant-image").value = data.image || "";
+                    document.getElementById("edit-delivery-time").value = data.delivery_time || "";
+                    const statusCheckbox = document.getElementById("edit-restaurant-status");
+                    statusCheckbox.checked = data.isOpen;
+                    document.getElementById("status-text").textContent = data.isOpen ? "Open" : "Closed";
+                    toggleSection("edit-restaurant");
+                }
+            } catch (error) {
+                console.error("Error loading restaurant for edit:", error);
+                showNotification("Failed to load restaurant details", "error");
+            }
+        }
+
+        document.getElementById("edit-restaurant-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            try {
+                const id = document.getElementById("edit-restaurant-id").value;
+                const name = document.getElementById("edit-restaurant-name").value;
+                const image = document.getElementById("edit-restaurant-image").value;
+                const delivery_time = document.getElementById("edit-delivery-time").value;
+                const isOpen = document.getElementById("edit-restaurant-status").checked;
+
+                if (!name.trim()) {
+                    showNotification("Please enter a restaurant name.", "error");
+                    return;
+                }
+
+                if (delivery_time && (isNaN(delivery_time) || delivery_time < 0)) {
+                    showNotification("Please enter a valid delivery time.", "error");
+                    return;
+                }
+
+                await updateDoc(doc(db, "restaurant", id), {
+                    name,
+                    image,
+                    delivery_time: delivery_time ? Number(delivery_time) : null,
+                    isOpen,
+                    timestamp: Date.now()
+                });
+
+                showNotification(`Restaurant "${name}" updated successfully!`);
+                toggleSection("restaurants");
+                loadRestaurants();
+            } catch (error) {
+                console.error("Error updating restaurant:", error);
+                showNotification("Unable to update restaurant. Please try again.", "error");
+            }
+        });
+
+        document.getElementById("cancel-edit").addEventListener("click", () => {
+            toggleSection("restaurants");
+        });
+
+        document.getElementById("edit-restaurant-status").addEventListener("change", (e) => {
+            document.getElementById("status-text").textContent = e.target.checked ? "Open" : "Closed";
+        });
 
         async function loadVendorMappings() {
             try {
@@ -1113,38 +1309,321 @@ body::-webkit-scrollbar {
             }
         });
 
-        onAuthStateChanged(auth, (user) => {
+        // Delivery Section Functions
+        async function getRestaurantName(restaurantId) {
             try {
-                if (user && adminEmails.includes(user.email)) {
-                    console.log("Admin logged in:", user.email);
-                    loadingScreen.style.display = "none";
-                    loginSection.style.display = "none";
-                    mainContent.classList.remove("hidden");
-                    loadDashboard();
-                    loadRestaurants();
-                    loadVendorMappings();
-                    loadOrders();
-                    loadUsers();
-                } else {
-                    console.log("No admin user detected");
-                    loadingScreen.style.display = "none";
-                    loginSection.style.display = "flex";
-                    mainContent.classList.add("hidden");
-                    if (user) {
-                        signOut(auth);
-                        showLoginNotification("Unauthorized: Not an admin!", "error");
+                const restaurantDoc = await getDoc(doc(db, "restaurant", restaurantId));
+                return restaurantDoc.exists() ? restaurantDoc.data().name : restaurantId;
+            } catch (error) {
+                console.error("Error fetching restaurant name:", error);
+                return restaurantId;
+            }
+        }
+
+        async function loadDeliveryDashboard() {
+            try {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const todayTimestamp = today.getTime();
+
+                let todayDeliveries = 0, completedToday = 0, totalAmount = 0, activeDeliveries = 0;
+
+                onSnapshot(collection(db, "orders"), (snapshot) => {
+                    todayDeliveries = 0;
+                    completedToday = 0;
+                    totalAmount = 0;
+                    activeDeliveries = 0;
+
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const orderDate = new Date(data.timestamp);
+                        const isToday = orderDate >= today;
+
+                        if (["being_delivered", "delivered", "not_delivered", "cancelled"].includes(data.status)) {
+                            if (isToday) todayDeliveries++;
+                            if (data.status === "delivered") {
+                                if (isToday) completedToday++;
+                                totalAmount += data.totalAmount || 0;
+                            }
+                            if (data.status === "being_delivered") activeDeliveries++;
+                        }
+                    });
+
+                    deliveryDashboard.innerHTML = "";
+                    const cards = [
+                        { id: "today", title: "Today's Deliveries", count: todayDeliveries, icon: "fa-truck", tooltip: "Orders assigned today" },
+                        { id: "completed", title: "Completed Today", count: completedToday, icon: "fa-check-circle", tooltip: "Delivered orders today" },
+                        { id: "amount", title: "Total Amount", count: `GH₵${totalAmount.toFixed(2)}`, icon: "fa-money-bill", tooltip: "Total delivery revenue" },
+                        { id: "active", title: "Active Deliveries", count: activeDeliveries, icon: "fa-motorcycle", tooltip: "Ongoing deliveries" }
+                    ];
+
+                    cards.forEach(card => {
+                        const div = document.createElement("div");
+                        div.className = `dashboard-card deliveries`;
+                        div.innerHTML = `
+                            <div class="tooltip">${card.tooltip}</div>
+                            <h3>${card.title}</h3>
+                            <div class="subtitle">Current Status</div>
+                            <p>${card.count}</p>
+                            <i class="fas ${card.icon}"></i>
+                        `;
+                        deliveryDashboard.appendChild(div);
+                    });
+                }, error => console.error("Delivery dashboard snapshot error:", error));
+            } catch (error) {
+                console.error("Error loading delivery dashboard:", error);
+                showNotification("Unable to load delivery dashboard.", "error");
+            }
+        }
+
+        async function loadActiveDeliveries() {
+            try {
+                onSnapshot(query(collection(db, "orders"), where("status", "==", "being_delivered")), async (snapshot) => {
+                    const fragment = document.createDocumentFragment();
+                    for (const doc of snapshot.docs) {
+                        const data = doc.data();
+                        const items = data.items?.map(item => `${item.quantity}x ${item.name}`).join(", ") || "N/A";
+                        const restaurantName = await getRestaurantName(data.restaurantId);
+                        const item = document.createElement("div");
+                        item.className = "item";
+                        item.innerHTML = `
+                            <h4>Order ID: ${doc.id}</h4>
+                            <p>Restaurant: ${restaurantName}</p>
+                            <p>Items: ${items}</p>
+                            <p>Total: GH₵${data.totalAmount.toFixed(2)}</p>
+                            <p>Delivery To: ${data.address || "N/A"}</p>
+                            <p>Assigned To: ${data.assignedTo || "Unassigned"}</p>
+                            <p>Time: ${new Date(data.timestamp).toLocaleString()}</p>
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                <button class="btn btn-secondary mark-delivered" data-id="${doc.id}">Mark Delivered</button>
+                                <button class="btn btn-secondary mark-not-delivered" data-id="${doc.id}">Mark Not Delivered</button>
+                                <button class="btn btn-secondary reassign-delivery" data-id="${doc.id}">Reassign</button>
+                                <button class="btn btn-secondary cancel-delivery" data-id="${doc.id}">Cancel</button>
+                            </div>
+                        `;
+                        item.querySelector(".mark-delivered").addEventListener("click", () => markDelivered(doc.id));
+                        item.querySelector(".mark-not-delivered").addEventListener("click", () => markNotDelivered(doc.id));
+                        item.querySelector(".reassign-delivery").addEventListener("click", () => reassignDelivery(doc.id));
+                        item.querySelector(".cancel-delivery").addEventListener("click", () => cancelDelivery(doc.id));
+                        fragment.appendChild(item);
                     }
+                    activeDeliveryList.innerHTML = "";
+                    activeDeliveryList.appendChild(fragment);
+                    if (!snapshot.size) activeDeliveryList.innerHTML = "<p class='text-gray-400'>No active deliveries.</p>";
+                }, error => console.error("Active deliveries snapshot error:", error));
+            } catch (error) {
+                console.error("Error loading active deliveries:", error);
+                showNotification("Failed to load active deliveries.", "error");
+            }
+        }
+
+        async function loadDeliveryHistory() {
+            try {
+                onSnapshot(query(collection(db, "orders"), where("status", "in", ["delivered", "not_delivered", "cancelled"])), async (snapshot) => {
+                    const fragment = document.createDocumentFragment();
+                    for (const doc of snapshot.docs) {
+                        const data = doc.data();
+                        const items = data.items?.map(item => `${item.quantity}x ${item.name}`).join(", ") || "N/A";
+                        const restaurantName = await getRestaurantName(data.restaurantId);
+                        const item = document.createElement("div");
+                        item.className = "item";
+                        item.innerHTML = `
+                            <h4>Order ID: ${doc.id}</h4>
+                            <p>Restaurant: ${restaurantName}</p>
+                            <p>Items: ${items}</p>
+                            <p>Total: GH₵${data.totalAmount.toFixed(2)}</p>
+                            <p>Status: ${data.status}</p>
+                            <p>Delivery To: ${data.address || "N/A"}</p>
+                            <p>Assigned To: ${data.assignedTo || "N/A"}</p>
+                            <p>Time: ${new Date(data.timestamp).toLocaleString()}</p>
+                        `;
+                        fragment.appendChild(item);
+                    }
+                    deliveryHistoryList.innerHTML = "";
+                    deliveryHistoryList.appendChild(fragment);
+                    if (!snapshot.size) deliveryHistoryList.innerHTML = "<p class='text-gray-400'>No delivery history.</p>";
+                }, error => console.error("Delivery history snapshot error:", error));
+            } catch (error) {
+                console.error("Error loading delivery history:", error);
+                showNotification("Failed to load delivery history.", "error");
+            }
+        }
+
+        async function loadDeliveryPersonnel() {
+            try {
+                onSnapshot(collection(db, "deliveryMapping"), (snapshot) => {
+                    const fragment = document.createDocumentFragment();
+                    const table = document.createElement("table");
+                    table.className = "personnel-table";
+                    table.innerHTML = `
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Hostels</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    `;
+                    const tbody = table.querySelector("tbody");
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${doc.id}</td>
+                            <td>${data.isActive ? "Active" : "Inactive"}</td>
+                            <td>${data.allowedHostels?.join(", ") || "None"}</td>
+                            <td>
+                                <button class="btn btn-secondary toggle-status" data-id="${doc.id}" data-active="${data.isActive}">${data.isActive ? "Deactivate" : "Activate"}</button>
+                                <button class="btn btn-secondary edit-hostels" data-id="${doc.id}">Edit Hostels</button>
+                            </td>
+                        `;
+                        row.querySelector(".toggle-status").addEventListener("click", () => togglePersonnelStatus(doc.id, data.isActive));
+                        row.querySelector(".edit-hostels").addEventListener("click", () => editHostels(doc.id, data.allowedHostels || []));
+                        tbody.appendChild(row);
+                    });
+                    const item = document.createElement("div");
+                    item.className = "item";
+                    item.appendChild(table);
+                    fragment.appendChild(item);
+                    personnelList.innerHTML = "";
+                    personnelList.appendChild(fragment);
+                    if (!snapshot.size) personnelList.innerHTML = "<p class='text-gray-400'>No delivery personnel found.</p>";
+                }, error => console.error("Delivery personnel snapshot error:", error));
+            } catch (error) {
+                console.error("Error loading delivery personnel:", error);
+                showNotification("Failed to load delivery personnel.", "error");
+            }
+        }
+
+        async function markDelivered(orderId) {
+            try {
+                await updateDoc(doc(db, "orders", orderId), {
+                    status: "delivered",
+                    updatedAt: Date.now()
+                });
+                showNotification("Order marked as delivered!");
+            } catch (error) {
+                console.error("Error marking order as delivered:", error);
+                showNotification("Unable to mark order as delivered.", "error");
+            }
+        }
+
+        async function markNotDelivered(orderId) {
+            try {
+                await updateDoc(doc(db, "orders", orderId), {
+                    status: "not_delivered",
+                    updatedAt: Date.now(),
+                    assignedTo: null
+                });
+                showNotification("Order marked as not delivered!");
+            } catch (error) {
+                console.error("Error marking order as not delivered:", error);
+                showNotification("Unable to mark order as not delivered.", "error");
+            }
+        }
+
+        async function reassignDelivery(orderId) {
+            try {
+                await updateDoc(doc(db, "orders", orderId), {
+                    assignedTo: null,
+                    updatedAt: Date.now()
+                });
+                showNotification("Order reassigned successfully!");
+            } catch (error) {
+                console.error("Error reassigning order:", error);
+                showNotification("Unable to reassign order.", "error");
+            }
+        }
+
+        async function cancelDelivery(orderId) {
+            try {
+                await updateDoc(doc(db, "orders", orderId), {
+                    status: "cancelled",
+                    updatedAt: Date.now(),
+                    assignedTo: null
+                });
+                showNotification("Order cancelled successfully!");
+            } catch (error) {
+                console.error("Error cancelling order:", error);
+                showNotification("Unable to cancel order.", "error");
+            }
+        }
+
+        async function togglePersonnelStatus(email, isActive) {
+            try {
+                await updateDoc(doc(db, "deliveryMapping", email), {
+                    isActive: !isActive,
+                    updatedAt: Date.now()
+                });
+                showNotification(`Personnel ${isActive ? "deactivated" : "activated"} successfully!`);
+            } catch (error) {
+                console.error("Error toggling personnel status:", error);
+                showNotification("Unable to toggle personnel status.", "error");
+            }
+        }
+
+        async function editHostels(email, currentHostels) {
+            try {
+                const newHostels = prompt("Enter hostels (comma-separated):", currentHostels.join(", "));
+                if (newHostels !== null) {
+                    const hostelArray = newHostels.split(",").map(h => h.trim()).filter(h => h);
+                    await updateDoc(doc(db, "deliveryMapping", email), {
+                        allowedHostels: hostelArray,
+                        updatedAt: Date.now()
+                    });
+                    showNotification("Hostels updated successfully!");
                 }
             } catch (error) {
-                console.error("Auth state change error:", error);
-                showLoginNotification("Authentication error", "error");
+                console.error("Error updating hostels:", error);
+                showNotification("Unable to update hostels.", "error");
+            }
+        }
+
+        function loadDeliverySection() {
+            loadDeliveryDashboard();
+            loadActiveDeliveries();
+            loadDeliveryHistory();
+            loadDeliveryPersonnel();
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            onAuthStateChanged(auth, (user) => {
+                try {
+                    if (user && adminEmails.includes(user.email)) {
+                        console.log("Admin logged in:", user.email);
+                        loadingScreen.style.display = "none";
+                        loginSection.style.display = "none";
+                        mainContent.classList.remove("hidden");
+                        loadDashboard();
+                        loadRestaurants();
+                        loadVendorMappings();
+                        loadOrders();
+                        loadUsers();
+                        loadDeliverySection();
+                    } else {
+                        console.log("No admin user detected");
+                        loadingScreen.style.display = "none";
+                        loginSection.style.display = "flex";
+                        mainContent.classList.add("hidden");
+                        if (user) {
+                            signOut(auth);
+                            showLoginNotification("Unauthorized: Not an admin!", "error");
+                        }
+                    }
+                } catch (error) {
+                    console.error("Auth state change error:", error);
+                    loadingScreen.style.display = "none";
+                    loginSection.style.display = "flex";
+                    showLoginNotification("Authentication error", "error");
+                }
+            }, error => {
+                console.error("Auth listener error:", error);
                 loadingScreen.style.display = "none";
                 loginSection.style.display = "flex";
-            }
-        }, error => {
-            console.error("Auth listener error:", error);
-            loadingScreen.style.display = "none";
-            loginSection.style.display = "flex";
+                showLoginNotification("Authentication listener failed", "error");
+            });
         });
 
         document.getElementById("login-form").addEventListener("submit", async (e) => {
@@ -1182,6 +1661,7 @@ body::-webkit-scrollbar {
         document.getElementById("vendor-mappings-btn").addEventListener("click", () => { toggleSection("vendor-mappings"); loadVendorMappings(); });
         document.getElementById("orders-btn").addEventListener("click", () => { toggleSection("orders"); loadOrders(); });
         document.getElementById("users-btn").addEventListener("click", () => { toggleSection("users"); loadUsers(); });
+        document.getElementById("delivery-btn").addEventListener("click", () => { toggleSection("delivery"); loadDeliverySection(); });
         document.getElementById("settings-btn").addEventListener("click", () => { toggleSection("settings"); });
 
         if ('serviceWorker' in navigator) {
