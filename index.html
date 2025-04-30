@@ -805,9 +805,11 @@
             <h2 class="text-2xl font-semibold mb-4">Vendor Mappings</h2>
             <form id="vendor-mapping-form" class="mb-6">
                 <input type="email" id="vendor-email" placeholder="Vendor Email" class="input">
-                <select id="vendor-restaurant" class="input">
-                    <option value="" disabled selected>Select Restaurant</option>
-                </select>
+                <select id="vendor-restaurant" class="input" 
+                style="padding: 12px 16px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc; width: 100%; max-width: 400px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <option value="" disabled selected>Select Restaurant</option>
+            </select>
+            
                 <button type="submit" class="btn w-full">Add Mapping</button>
             </form>
             <div id="vendor-mapping-list"></div>
