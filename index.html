@@ -94,6 +94,22 @@
             align-items: center;
             justify-content: center;
         }
+        .btn-primary { 
+            background: #dc2626;
+            color: white;
+            border: none; 
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer; 
+            width: 100%; 
+            font-size: 16px;
+            transition: all 0.3s;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
         .btn:hover { 
             background: linear-gradient(135deg, #34c759, #007aff);
             transform: translateY(-2px); 
@@ -767,9 +783,22 @@
                 <p>Status: <span id="status-text">Closed</span></p>
                 <div style="display: flex; gap: 10px;">
                     <button type="submit" class="btn">Save Changes</button>
+                    <button type="button" id="edit-menu-btn" class="btn btn-secondary">Edit Menu</button>
                     <button type="button" id="cancel-edit" class="btn btn-tertiary">Cancel</button>
                 </div>
             </form>
+        </div>
+
+        <div id="edit-menu" class="section hidden">
+            <h2 class="text-2xl font-semibold mb-4">Edit Menu</h2>
+            <input type="hidden" id="current-restaurant-id">
+            <form id="menu-item-form" class="mb-6">
+                <input type="text" id="menu-item-name" placeholder="Item Name" class="input">
+                <input type="number" id="menu-item-price" placeholder="Price (GH₵)" class="input" min="0" step="0.01">
+                <button type="submit" class="btn w-full">Add Menu Item</button>
+            </form>
+            <div id="menu-item-list"></div>
+            <button id="back-to-edit-restaurant" class="btn btn-tertiary mt-4">Back to Edit Restaurant</button>
         </div>
 
         <div id="vendor-mappings" class="section hidden">
@@ -805,9 +834,13 @@
 
         <div id="settings" class="section hidden">
             <h2 class="text-2xl font-semibold mb-4">Settings</h2>
-            <p>Settings are currently unavailable.</p>
+            <p>Manage your admin settings below.</p>
+            <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
+                <button id="logout-btn" class="btn btn-primary">Logout</button>
+                <button id="update-btn" class="btn">Force Update</button>
+            </div>
+            
         </div>
-    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
@@ -857,6 +890,7 @@
         const loginSpinner = document.getElementById("login-spinner");
         const dashboardGrid = document.getElementById("dashboard-grid");
         const restaurantList = document.getElementById("restaurant-list");
+        const menuItemList = document.getElementById("menu-item-list");
         const vendorMappingList = document.getElementById("vendor-mapping-list");
         const ordersList = document.getElementById("orders-list");
         const usersList = document.getElementById("users-list");
@@ -930,19 +964,19 @@
         }
 
         function toggleSection(sectionId) {
-            const sections = ["dashboard", "restaurants", "vendor-mappings", "orders", "users", "delivery", "settings", "edit-restaurant"];
-            sections.forEach(id => {
-                const section = document.getElementById(id);
-                if (section) {
-                    section.classList.toggle("hidden", id !== sectionId);
-                }
-                const btn = document.getElementById(`${id}-btn`);
-                if (btn) {
-                    btn.classList.toggle("active", id === sectionId);
-                }
-            });
-            closeSidebar();
+    const sections = ["dashboard", "restaurants", "vendor-mappings", "orders", "users", "delivery", "settings", "edit-restaurant", "edit-menu"];
+    sections.forEach(id => {
+        const section = document.getElementById(id);
+        if (section) {
+            section.classList.toggle("hidden", id !== sectionId);
         }
+        const btn = document.getElementById(`${id}-btn`);
+        if (btn) {
+            btn.classList.toggle("active", id === sectionId);
+        }
+    });
+    closeSidebar();
+}
 
         async function loadRestaurants() {
             try {
@@ -1034,6 +1068,18 @@
             }
         });
 
+        document.getElementById("edit-menu-btn").addEventListener("click", () => {
+    const restaurantId = document.getElementById("edit-restaurant-id").value;
+    document.getElementById("current-restaurant-id").value = restaurantId;
+    loadMenuItems(restaurantId);
+    toggleSection("edit-menu");
+});
+
+document.getElementById("back-to-edit-restaurant").addEventListener("click", () => {
+    const restaurantId = document.getElementById("current-restaurant-id").value;
+    editRestaurant(restaurantId);
+});
+
         document.getElementById("cancel-edit").addEventListener("click", () => {
             toggleSection("restaurants");
         });
@@ -1068,6 +1114,113 @@
                 showNotification("Failed to load vendor mappings", "error");
             }
         }
+
+        async function loadMenuItems(restaurantId) {
+    try {
+        const querySnapshot = await getDocs(collection(db, "restaurant", restaurantId, "menu"));
+        const fragment = document.createDocumentFragment();
+        querySnapshot.forEach(doc => {
+            const data = doc.data();
+            const item = document.createElement("div");
+            item.className = "item";
+            item.innerHTML = `
+                <h4>${data.name || "Unnamed"}</h4>
+                <p>Price: GH₵${data.price?.toFixed(2) || "Not set"}</p>
+                <div class="item-actions">
+                    <button class="btn btn-secondary edit-menu-item" data-id="${doc.id}" data-restaurant-id="${restaurantId}">Edit</button>
+                    <button class="btn btn-secondary delete-menu-item" data-id="${doc.id}" data-restaurant-id="${restaurantId}">Delete</button>
+                </div>
+            `;
+            item.querySelector(".edit-menu-item").addEventListener("click", () => editMenuItem(restaurantId, doc.id));
+            item.querySelector(".delete-menu-item").addEventListener("click", () => {
+                if (confirm(`Are you sure you want to delete menu item: ${data.name}?`)) deleteMenuItem(restaurantId, doc.id);
+            });
+            fragment.appendChild(item);
+        });
+        menuItemList.innerHTML = "";
+        menuItemList.appendChild(fragment);
+        if (!querySnapshot.size) menuItemList.innerHTML = "<p class='text-gray-400'>No menu items found.</p>";
+    } catch (error) {
+        console.error("Error loading menu items:", error);
+        showNotification("Failed to load menu items", "error");
+    }
+}
+
+async function editMenuItem(restaurantId, itemId) {
+    try {
+        const itemDoc = await getDoc(doc(db, "restaurant", restaurantId, "menu", itemId));
+        if (itemDoc.exists()) {
+            const data = itemDoc.data();
+            const nameInput = document.getElementById("menu-item-name");
+            const priceInput = document.getElementById("menu-item-price");
+            
+            nameInput.value = data.name || "";
+            priceInput.value = data.price || "";
+            
+            const form = document.getElementById("menu-item-form");
+            form.dataset.itemId = itemId;
+            form.querySelector("button").textContent = "Update Menu Item";
+        }
+    } catch (error) {
+        console.error("Error loading menu item for edit:", error);
+        showNotification("Failed to load menu item details", "error");
+    }
+}
+
+async function deleteMenuItem(restaurantId, itemId) {
+    try {
+        await deleteDoc(doc(db, "restaurant", restaurantId, "menu", itemId));
+        showNotification("Menu item successfully deleted!");
+        loadMenuItems(restaurantId);
+    } catch (error) {
+        console.error("Error deleting menu item:", error);
+        showNotification("Unable to delete menu item. Please try again.", "error");
+    }
+}
+
+document.getElementById("menu-item-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+        const restaurantId = document.getElementById("current-restaurant-id").value;
+        const name = document.getElementById("menu-item-name").value;
+        const price = document.getElementById("menu-item-price").value;
+        const form = document.getElementById("menu-item-form");
+        const itemId = form.dataset.itemId;
+
+        if (!name.trim()) {
+            showNotification("Please enter a menu item name.", "error");
+            return;
+        }
+
+        if (!price || isNaN(price) || price < 0) {
+            showNotification("Please enter a valid price.", "error");
+            return;
+        }
+
+        const itemData = {
+            name,
+            price: Number(price),
+            timestamp: Date.now()
+        };
+
+        if (itemId) {
+            await updateDoc(doc(db, "restaurant", restaurantId, "menu", itemId), itemData);
+            showNotification(`Menu item "${name}" updated successfully!`);
+            delete form.dataset.itemId;
+            form.querySelector("button").textContent = "Add Menu Item";
+        } else {
+            await addDoc(collection(db, "restaurant", restaurantId, "menu"), itemData);
+            showNotification(`Menu item "${name}" added successfully!`);
+        }
+
+        document.getElementById("menu-item-name").value = "";
+        document.getElementById("menu-item-price").value = "";
+        loadMenuItems(restaurantId);
+    } catch (error) {
+        console.error("Error saving menu item:", error);
+        showNotification("Unable to save menu item. Please try again.", "error");
+    }
+});
 
         function loadDashboard() {
             try {
@@ -1675,6 +1828,22 @@
                     });
             });
         }
+
+        document.getElementById("logout-btn").addEventListener("click", () => {
+    signOut(auth).then(() => {
+        showLoginNotification("Logged out successfully!");
+        loginSection.style.display = "flex";
+        mainContent.classList.add("hidden");
+    }).catch(error => {
+        console.error("Logout error:", error);
+        showNotification("Failed to logout. Please try again.", "error");
+    });
+});
+
+document.getElementById("update-btn").addEventListener("click", () => {
+    window.location.reload(true); // Force reload like Shift+Ctrl+R
+});
+
     </script>
 </body>
 </html>
