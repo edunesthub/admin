@@ -6,12 +6,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
-    
     <title>Chawp Admin Portal</title>
     <link rel="manifest" href="/manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { 
@@ -700,6 +699,96 @@
         .dashboard-card.deliveries:after { display: none !important; }
         .dashboard-card.deliveries p { color: inherit !important; background: none !important; }
         .mini-chart { display: none !important; }
+
+        /* Delivery Personnel List Section (only this part updated) */
+        h2.text-xl.font-semibold.mb-4 {
+            margin-bottom: 16px;
+            font-size: 1.5rem;
+        }
+        #personnel-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 18px;
+            min-height: 60px;
+        }
+        #personnel-list div {
+            text-align: center;
+            color: #aaa;
+            padding: 20px 0;
+        }
+        /* Add or update these styles in your <style> tag */
+        .personnel-list-btn {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: linear-gradient(120deg, #232325 80%, #232325 100%);
+            border: none;
+            border-radius: 18px;
+            padding: 20px 22px;
+            margin-bottom: 0;
+            width: 100%;
+            font-size: 1.08rem;
+            color: #e0e0e0;
+            font-weight: 600;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+            transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+            cursor: pointer;
+            text-align: left;
+            position: relative;
+            min-height: 64px;
+            border: 1.5px solid #232325;
+            outline: none;
+        }
+        .personnel-list-btn:hover, .personnel-list-btn:focus {
+            background: linear-gradient(120deg, #2a2a2c 80%, #30c8ff 100%);
+            color: #fff;
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 6px 18px rgba(0,122,255,0.10);
+            border-color: #30c8ff;
+        }
+        .personnel-list-btn .fa-user {
+            color: #30c8ff;
+            font-size: 1.5rem;
+            background: #18181a;
+            border-radius: 50%;
+            padding: 10px;
+            box-shadow: 0 2px 8px rgba(48,200,255,0.10);
+        }
+        .personnel-list-btn .personnel-email {
+            font-weight: 700;
+            color: #fff;
+            font-size: 1.08rem;
+            letter-spacing: 0.01em;
+            word-break: break-all;
+        }
+        .personnel-list-btn .personnel-label {
+            background: #30c8ff;
+            color: #fff;
+            font-size: 0.85em;
+            border-radius: 8px;
+            padding: 2px 10px;
+            margin-left: 10px;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+        }
+        .personnel-list-btn .status-dot {
+            margin-left: auto;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #34c759;
+            display: inline-block;
+            border: 2px solid #232325;
+            box-shadow: 0 0 0 2px #232325;
+        }
+        .personnel-list-btn .status-dot.inactive {
+            background: #ff3b30;
+        }
+        @media (max-width: 600px) {
+            #personnel-list { grid-template-columns: 1fr !important; }
+            .personnel-list-btn { padding: 14px 10px; font-size: 0.98rem; min-height: 54px; }
+        }
+
     </style>
 </head>
 <body>
@@ -836,12 +925,21 @@
     <form id="delivery-personnel-form" class="mb-6" autocomplete="off">
         <input type="email" id="personnel-email" placeholder="Personnel Email" class="input" required autocomplete="off">
         <input type="text" id="personnel-hostels" placeholder="Hostels (comma-separated)" class="input" autocomplete="off">
-        <button type="submit" class="btn w-full">Add Personnel</button>
+        <button type="submit" class="btn w-full"><i class="fas fa-plus mr-2"></i>Add Personnel</button>
     </form>
     <h2 class="text-xl font-semibold mb-4">Delivery Personnel</h2>
-    <div id="personnel-list" style="overflow-x:auto; min-height: 60px;">
+    <div id="personnel-list" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;min-height:60px;">
         <div style="text-align:center; color:#aaa; padding:20px 0;">Loading delivery personnel...</div>
     </div>
+</div>
+
+<!-- Personnel Details Section -->
+<div id="personnel-details-section" class="section hidden">
+    <button id="back-to-personnel-list" class="btn btn-tertiary mb-4" style="max-width:180px;">
+        <i class="fas fa-arrow-left"></i>&nbsp;Back
+    </button>
+    <h2 class="text-xl font-semibold mb-4">Personnel Details</h2>
+    <div id="personnel-details-content"></div>
 </div>
 
         <div id="settings" class="section hidden">
@@ -1516,7 +1614,7 @@ document.getElementById("vendor-mapping-form").addEventListener("submit", async 
     }
 });
 
-// Delivery Section Functions
+// Delivery Section Functions (UI improved)
 async function loadDeliveryPersonnel() {
     try {
         const personnelList = document.getElementById("personnel-list");
@@ -1526,78 +1624,22 @@ async function loadDeliveryPersonnel() {
                 personnelList.innerHTML = "<p class='text-gray-400' style='text-align:center;'>No delivery personnel found.<br>Add personnel to manage delivery accounts.</p>";
                 return;
             }
-            const table = document.createElement("table");
-            table.className = "personnel-table";
-            table.innerHTML = `
-                <thead>
-                    <tr>
-                        <th>Email</th>
-                        <th>Status</th>
-                        <th>Hostels</th>
-                        <th>Created</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            `;
-            const tbody = table.querySelector("tbody");
+            const fragment = document.createDocumentFragment();
             snapshot.forEach(docSnap => {
                 const data = docSnap.data();
-                const createdAt = data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "N/A";
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td style="max-width:120px;overflow-wrap:anywhere;">${docSnap.id}</td>
-                    <td>${data.isActive !== false ? "Active" : "Inactive"}</td>
-                    <td style="max-width:120px;overflow-wrap:anywhere;">${Array.isArray(data.allowedHostels) && data.allowedHostels.length ? data.allowedHostels.join(", ") : "None"}</td>
-                    <td>${createdAt}</td>
-                    <td>
-                        <button class="btn btn-secondary" style="margin-bottom:2px;" data-action="toggle" data-id="${docSnap.id}" data-active="${data.isActive !== false}">
-                            ${data.isActive !== false ? "Deactivate" : "Activate"}
-                        </button>
-                        <button class="btn btn-secondary" style="margin-bottom:2px;" data-action="edit" data-id="${docSnap.id}" data-hostels="${(data.allowedHostels||[]).join(',')}">Edit Hostels</button>
-                        <button class="btn btn-secondary" data-action="delete" data-id="${docSnap.id}">Delete</button>
-                    </td>
+                const btn = document.createElement("button");
+                btn.className = "personnel-list-btn";
+                btn.innerHTML = `
+                    <i class="fas fa-user"></i>
+                    <span class="personnel-email">${docSnap.id}</span>
+                    <span class="personnel-label">${Array.isArray(data.allowedHostels) && data.allowedHostels.length ? data.allowedHostels.length + ' Hostel' + (data.allowedHostels.length > 1 ? 's' : '') : 'No Hostels'}</span>
+                    <span class="status-dot${data.isActive === false ? ' inactive' : ''}" title="${data.isActive === false ? 'Inactive' : 'Active'}"></span>
                 `;
-                tbody.appendChild(row);
+                btn.onclick = () => showPersonnelDetails(docSnap.id);
+                fragment.appendChild(btn);
             });
             personnelList.innerHTML = "";
-            personnelList.appendChild(table);
-
-            // Attach event listeners for actions
-            table.querySelectorAll("button[data-action]").forEach(btn => {
-                const action = btn.getAttribute("data-action");
-                const id = btn.getAttribute("data-id");
-                if (action === "toggle") {
-                    btn.onclick = async () => {
-                        const isActive = btn.getAttribute("data-active") === "true";
-                        await updateDoc(doc(db, "deliveryMapping", id), {
-                            isActive: !isActive,
-                            updatedAt: Date.now()
-                        });
-                        showNotification(`Personnel "${id}" is now ${!isActive ? "Active" : "Inactive"}.`);
-                    };
-                } else if (action === "edit") {
-                    btn.onclick = async () => {
-                        const currentHostels = btn.getAttribute("data-hostels") || "";
-                        const newHostels = prompt("Enter hostels (comma-separated):", currentHostels);
-                        if (newHostels !== null) {
-                            const hostelArray = newHostels.split(",").map(h => h.trim()).filter(h => h);
-                            await updateDoc(doc(db, "deliveryMapping", id), {
-                                allowedHostels: hostelArray,
-                                updatedAt: Date.now()
-                            });
-                            showNotification("Hostels updated successfully!");
-                        }
-                    };
-                } else if (action === "delete") {
-                    btn.onclick = async () => {
-                        if (confirm(`Are you sure you want to delete personnel: ${id}?`)) {
-                            await deleteDoc(doc(db, "deliveryMapping", id));
-                            showNotification("Personnel deleted successfully!");
-                        }
-                    };
-                }
-            });
+            personnelList.appendChild(fragment);
         }, error => {
             personnelList.innerHTML = "<p class='text-red-400' style='text-align:center;'>Failed to load delivery personnel.</p>";
             showNotification("Failed to load delivery personnel. Please check permissions.", "error");
@@ -1608,77 +1650,77 @@ async function loadDeliveryPersonnel() {
     }
 }
 
-deliveryPersonnelForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
+async function showPersonnelDetails(email) {
     try {
-        const email = document.getElementById("personnel-email").value.trim();
-        const hostelsInput = document.getElementById("personnel-hostels").value.trim();
-        const hostels = hostelsInput ? hostelsInput.split(",").map(h => h.trim()).filter(h => h) : [];
+        document.getElementById("delivery").classList.add("hidden");
+        document.getElementById("personnel-details-section").classList.remove("hidden");
 
-        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            showNotification("Please enter a valid email.", "error");
+        const detailsContent = document.getElementById("personnel-details-content");
+        detailsContent.innerHTML = `<div style="text-align:center; color:#aaa; padding:20px 0;">Loading details...</div>`;
+
+        const personnelDoc = await getDoc(doc(db, "deliveryMapping", email));
+        if (!personnelDoc.exists()) {
+            detailsContent.innerHTML = `<p class="text-red-400" style="text-align:center;">Personnel not found.</p>`;
             return;
         }
+        const data = personnelDoc.data();
 
-        const personnelRef = doc(db, "deliveryMapping", email);
-        const personnelSnap = await getDoc(personnelRef);
-        if (personnelSnap.exists()) {
-            showNotification("Personnel with this email already exists.", "error");
-            return;
-        }
+        detailsContent.innerHTML = `
+            <div class="item" style="max-width:500px;margin:auto;">
+                <h4><i class="fas fa-user"></i> ${email}</h4>
+                <p><b>Status:</b> <span style="color:${data.isActive !== false ? '#34c759' : '#ff3b30'};font-weight:600;">${data.isActive !== false ? "Active" : "Inactive"}</span></p>
+                <p><b>Hostels:</b> <span style="color:#30c8ff">${Array.isArray(data.allowedHostels) && data.allowedHostels.length ? data.allowedHostels.join(", ") : "None"}</span></p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:15px;">
+                    <button class="btn btn-secondary" id="toggle-personnel-status">${data.isActive !== false ? "Deactivate" : "Activate"}</button>
+                    <button class="btn btn-secondary" id="edit-personnel-hostels">Edit Hostels</button>
+                    <button class="btn btn-secondary" id="delete-personnel">Delete</button>
+                </div>
+            </div>
+        `;
 
-        await setDoc(personnelRef, {
-            isActive: true,
-            isDelivery: true,
-            allowedHostels: hostels,
-            createdAt: Date.now(),
-            updatedAt: Date.now()
-        });
-
-        showNotification(`Personnel "${email}" added with ${hostels.length} hostel(s)!`);
-        document.getElementById("personnel-email").value = "";
-        document.getElementById("personnel-hostels").value = "";
-        loadDeliveryPersonnel();
-    } catch (error) {
-        console.error("Error adding personnel:", error);
-        showNotification(error.message, "error");
-    }
-});
-
-async function editHostels(email, currentHostels) {
-    try {
-        const newHostels = prompt("Enter hostels (comma-separated):", currentHostels.join(", "));
-        if (newHostels !== null) {
-            const hostelArray = newHostels.split(",").map(h => h.trim()).filter(h => h);
+        document.getElementById("toggle-personnel-status").onclick = async () => {
             await updateDoc(doc(db, "deliveryMapping", email), {
-                allowedHostels: hostelArray,
+                isActive: !data.isActive,
                 updatedAt: Date.now()
             });
-            showNotification("Hostels updated successfully!");
-            loadDeliveryPersonnel();
-        }
+            showNotification(`Personnel "${email}" is now ${!data.isActive ? "Active" : "Inactive"}.`);
+            showPersonnelDetails(email);
+        };
+        document.getElementById("edit-personnel-hostels").onclick = async () => {
+            const currentHostels = Array.isArray(data.allowedHostels) ? data.allowedHostels.join(", ") : "";
+            const newHostels = prompt("Enter hostels (comma-separated):", currentHostels);
+            if (newHostels !== null) {
+                const hostelArray = newHostels.split(",").map(h => h.trim()).filter(h => h);
+                await updateDoc(doc(db, "deliveryMapping", email), {
+                    allowedHostels: hostelArray,
+                    updatedAt: Date.now()
+                });
+                showNotification("Hostels updated successfully!");
+                showPersonnelDetails(email);
+            }
+        };
+        document.getElementById("delete-personnel").onclick = async () => {
+            if (confirm(`Are you sure you want to delete personnel: ${email}?`)) {
+                await deleteDoc(doc(db, "deliveryMapping", email));
+                showNotification("Personnel deleted successfully!");
+                document.getElementById("personnel-details-section").classList.add("hidden");
+                document.getElementById("delivery").classList.remove("hidden");
+                loadDeliveryPersonnel();
+            }
+        };
     } catch (error) {
-        console.error("Error updating hostels:", error);
-        showNotification("Unable to update hostels.", "error");
+        document.getElementById("personnel-details-content").innerHTML = `<p class="text-red-400" style="text-align:center;">Failed to load details.</p>`;
+        showNotification("Failed to load personnel details.", "error");
     }
 }
 
-async function deletePersonnel(email) {
-    try {
-        if (confirm(`Are you sure you want to delete personnel: ${email}?`)) {
-            await deleteDoc(doc(db, "deliveryMapping", email));
-            showNotification("Personnel deleted successfully!");
-            loadDeliveryPersonnel();
-        }
-    } catch (error) {
-        console.error("Error deleting personnel:", error);
-        showNotification("Unable to delete personnel.", "error");
+document.addEventListener("click", function(e) {
+    if (e.target && e.target.id === "back-to-personnel-list") {
+        document.getElementById("personnel-details-section").classList.add("hidden");
+        document.getElementById("delivery").classList.remove("hidden");
+        loadDeliveryPersonnel();
     }
-}
-
-function loadDeliverySection() {
-    loadDeliveryPersonnel();
-}
+});
 
 // Authentication Handling
 function updateUIForUser(user) {
@@ -1767,6 +1809,19 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
 });
 
 
+// Add this function if not present, or update your delivery tab click handler to use it:
+function loadDeliverySection() {
+    document.getElementById("personnel-details-section").classList.add("hidden");
+    document.getElementById("delivery").classList.remove("hidden");
+    loadDeliveryPersonnel();
+}
+
+// Make sure your delivery tab button uses this:
+document.getElementById("delivery-btn").addEventListener("click", () => { 
+    toggleSection("delivery"); 
+    loadDeliverySection(); 
+});
+
 // Handle Delivery Personnel Form Submission
 document.getElementById("delivery-personnel-form").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -1798,14 +1853,34 @@ document.getElementById("delivery-personnel-form").addEventListener("submit", as
 });
 
 // Event Listeners
-document.getElementById("dashboard-btn").addEventListener("click", () => { toggleSection("dashboard"); loadDashboard(); });
-document.getElementById("restaurants-btn").addEventListener("click", () => { toggleSection("restaurants"); loadRestaurants(); });
-document.getElementById("vendor-mappings-btn").addEventListener("click", () => { toggleSection("vendor-mappings"); loadVendorMappings(); loadRestaurantsForDropdown(); });
-document.getElementById("orders-btn").addEventListener("click", () => { toggleSection("orders"); loadOrders(); });
-document.getElementById("users-btn").addEventListener("click", () => { toggleSection("users"); loadUsers(); });
-document.getElementById("delivery-btn").addEventListener("click", () => { toggleSection("delivery"); loadDeliverySection(); });
-document.getElementById("settings-btn").addEventListener("click", () => { toggleSection("settings"); });
-
+document.getElementById("dashboard-btn").addEventListener("click", () => { 
+    toggleSection("dashboard"); 
+    loadDashboard(); 
+});
+document.getElementById("restaurants-btn").addEventListener("click", () => { 
+    toggleSection("restaurants"); 
+    loadRestaurants(); 
+});
+document.getElementById("vendor-mappings-btn").addEventListener("click", () => { 
+    toggleSection("vendor-mappings"); 
+    loadVendorMappings(); 
+    loadRestaurantsForDropdown(); 
+});
+document.getElementById("orders-btn").addEventListener("click", () => { 
+    toggleSection("orders"); 
+    loadOrders(); 
+});
+document.getElementById("users-btn").addEventListener("click", () => { 
+    toggleSection("users"); 
+    loadUsers(); 
+});
+document.getElementById("delivery-btn").addEventListener("click", () => { 
+    toggleSection("delivery"); 
+    loadDeliverySection(); 
+});
+document.getElementById("settings-btn").addEventListener("click", () => { 
+    toggleSection("settings"); 
+});
 document.getElementById("logout-btn").addEventListener("click", () => {
     signOut(auth).then(() => {
         showLoginNotification("Logged out successfully!");
@@ -1817,12 +1892,11 @@ document.getElementById("logout-btn").addEventListener("click", () => {
         showNotification("Failed to logout. Please try again.", "error");
     });
 });
-
 document.getElementById("update-btn").addEventListener("click", () => {
     window.location.reload(true);
 });
 
-// Service Worker
+// Service Worker registration (optional, keep as is if you use it)
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
