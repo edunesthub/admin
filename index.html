@@ -1671,7 +1671,7 @@ async function showPersonnelDetails(email) {
                 <p><b>Status:</b> <span style="color:${data.isActive !== false ? '#34c759' : '#ff3b30'};font-weight:600;">${data.isActive !== false ? "Active" : "Inactive"}</span></p>
                 <p><b>Hostels:</b> <span style="color:#30c8ff">${Array.isArray(data.allowedHostels) && data.allowedHostels.length ? data.allowedHostels.join(", ") : "None"}</span></p>
                 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:15px;">
-                    <button class="btn btn-secondary" id="toggle-personnel-status">${data.isActive !== false ? "Deactivate" : "Activate"}</button>
+                    <button class="btn btn-secondary" id="toggle-personnel-status">${data.isActive !== false ? "Close" : "Open"}</button>
                     <button class="btn btn-secondary" id="edit-personnel-hostels">Edit Hostels</button>
                     <button class="btn btn-secondary" id="delete-personnel">Delete</button>
                 </div>
@@ -1687,26 +1687,50 @@ async function showPersonnelDetails(email) {
             showPersonnelDetails(email);
         };
         document.getElementById("edit-personnel-hostels").onclick = async () => {
-            const currentHostels = Array.isArray(data.allowedHostels) ? data.allowedHostels.join(", ") : "";
-            const newHostels = prompt("Enter hostels (comma-separated):", currentHostels);
-            if (newHostels !== null) {
-                const hostelArray = newHostels.split(",").map(h => h.trim()).filter(h => h);
+            // 1. Use your static allowed hostels array
+            const allHostels = ["Hostel A", "Hostel B", "Hostel C"];
+
+            // 2. Build modal HTML
+            const currentHostels = Array.isArray(data.allowedHostels) ? data.allowedHostels : [];
+            const modal = document.createElement("div");
+            modal.id = "hostel-modal";
+            modal.style = `
+                position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;
+                background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;
+            `;
+            modal.innerHTML = `
+                <div style="background:#232325;padding:32px 20px 20px 20px;border-radius:18px;max-width:95vw;width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+                    <h3 style="font-size:1.15rem;font-weight:600;margin-bottom:18px;color:#30c8ff;text-align:center;">Select Allowed Hostels</h3>
+                    <div id="hostel-checkboxes" style="max-height:220px;overflow-y:auto;margin-bottom:18px;">
+                        ${allHostels.length ? allHostels.map(h => `
+                            <label style="display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:1rem;">
+                                <input type="checkbox" value="${h}" ${currentHostels.includes(h) ? "checked" : ""} style="accent-color:#30c8ff;width:18px;height:18px;">
+                                <span>${h}</span>
+                            </label>
+                        `).join('') : '<span style="color:#aaa;">No hostels found.</span>'}
+                    </div>
+                    <div style="display:flex;gap:12px;justify-content:center;">
+                        <button id="hostel-modal-save" class="btn btn-secondary" style="min-width:90px;">Save</button>
+                        <button id="hostel-modal-cancel" class="btn btn-tertiary" style="min-width:90px;">Cancel</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            // 3. Modal actions
+            document.getElementById("hostel-modal-cancel").onclick = () => modal.remove();
+            document.getElementById("hostel-modal-save").onclick = async () => {
+                const checked = Array.from(modal.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
                 await updateDoc(doc(db, "deliveryMapping", email), {
-                    allowedHostels: hostelArray,
+                    allowedHostels: checked,
                     updatedAt: Date.now()
                 });
                 showNotification("Hostels updated successfully!");
+                modal.remove();
                 showPersonnelDetails(email);
-            }
-        };
-        document.getElementById("delete-personnel").onclick = async () => {
-            if (confirm(`Are you sure you want to delete personnel: ${email}?`)) {
-                await deleteDoc(doc(db, "deliveryMapping", email));
-                showNotification("Personnel deleted successfully!");
-                document.getElementById("personnel-details-section").classList.add("hidden");
-                document.getElementById("delivery").classList.remove("hidden");
-                loadDeliveryPersonnel();
-            }
+            };
+            // Optional: close modal on outside click
+            modal.onclick = e => { if (e.target === modal) modal.remove(); };
         };
     } catch (error) {
         document.getElementById("personnel-details-content").innerHTML = `<p class="text-red-400" style="text-align:center;">Failed to load details.</p>`;
