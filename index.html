@@ -695,6 +695,11 @@
         body::-webkit-scrollbar {
             display: none;
         }
+
+        /* --- Remove unused CSS for deleted sections --- */
+        .dashboard-card.deliveries:after { display: none !important; }
+        .dashboard-card.deliveries p { color: inherit !important; background: none !important; }
+        .mini-chart { display: none !important; }
     </style>
 </head>
 <body>
@@ -825,16 +830,19 @@
             <div id="users-list"></div>
         </div>
 
-        <div id="delivery" class="section hidden">
-            <h2 class="text-2xl font-semibold mb-4">Delivery Management</h2>
-            <div class="dashboard-grid" id="delivery-dashboard"></div>
-            <h2 class="text-xl font-semibold mb-4">Active Deliveries</h2>
-            <div id="active-delivery-list">Loading active deliveries...</div>
-            <h2 class="text-xl font-semibold mb-4">Delivery History</h2>
-            <div id="delivery-history-list">Loading delivery history...</div>
-            <h2 class="text-xl font-semibold mb-4">Delivery Personnel</h2>
-            <div id="personnel-list">Loading delivery personnel...</div>
-        </div>
+        <!-- Updated Delivery Section in the main-content div -->
+<div id="delivery" class="section hidden">
+    <h2 class="text-xl font-semibold mb-4">Add Delivery Personnel</h2>
+    <form id="delivery-personnel-form" class="mb-6" autocomplete="off">
+        <input type="email" id="personnel-email" placeholder="Personnel Email" class="input" required autocomplete="off">
+        <input type="text" id="personnel-hostels" placeholder="Hostels (comma-separated)" class="input" autocomplete="off">
+        <button type="submit" class="btn w-full">Add Personnel</button>
+    </form>
+    <h2 class="text-xl font-semibold mb-4">Delivery Personnel</h2>
+    <div id="personnel-list" style="overflow-x:auto; min-height: 60px;">
+        <div style="text-align:center; color:#aaa; padding:20px 0;">Loading delivery personnel...</div>
+    </div>
+</div>
 
         <div id="settings" class="section hidden">
             <h2 class="text-2xl font-semibold mb-4">Settings</h2>
@@ -848,126 +856,130 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-        import { 
-            getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, deleteDoc, updateDoc, query, onSnapshot, where
-        } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
-        import { 
-            getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence 
-        } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+import { 
+    getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, deleteDoc, updateDoc, query, onSnapshot, where
+} from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+import { 
+    getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence 
+} from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyADvpUQWo75ExePGoCRirD2mM-lmfM4Cmc",
-            authDomain: "von600-7982d.firebaseapp.com",
-            projectId: "von600-7982d",
-            storageBucket: "von600-7982d.appspot.com",
-            messagingSenderId: "164591218045",
-            appId: "1:164591218045:web:afe17512e16573e7903014",
-            measurementId: "G-E69DMPLXBK"
-        };
+const firebaseConfig = {
+    apiKey: "AIzaSyADvpUQWo75ExePGoCRirD2mM-lmfM4Cmc",
+    authDomain: "von600-7982d.firebaseapp.com",
+    projectId: "von600-7982d",
+    storageBucket: "von600-7982d.appspot.com",
+    messagingSenderId: "164591218045",
+    appId: "1:164591218045:web:afe17512e16573e7903014",
+    measurementId: "G-E69DMPLXBK"
+};
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const adminEmails = ["admin@gmail.com"];
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const adminEmails = ["admin@gmail.com"];
 
-        setPersistence(auth, browserLocalPersistence).catch(error => console.error("Persistence error:", error));
+setPersistence(auth, browserLocalPersistence).catch(error => console.error("Persistence error:", error));
 
-        const passwordToggle = document.getElementById('password-toggle');
-        const passwordInput = document.getElementById('password');
-        
-        if (passwordToggle && passwordInput) {
-            passwordToggle.addEventListener('click', function() {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-                this.querySelector('i').classList.toggle('fa-eye');
-                this.querySelector('i').classList.toggle('fa-eye-slash');
-            });
-        }
+// DOM Elements
+const passwordToggle = document.getElementById('password-toggle');
+const passwordInput = document.getElementById('password');
+const loadingScreen = document.getElementById("loading-screen");
+const loginSection = document.getElementById("login-section");
+const mainContent = document.getElementById("main-content");
+const notification = document.getElementById("notification");
+const loginNotification = document.getElementById("login-notification");
+const loginForm = document.getElementById("login-form");
+const loginBtn = document.getElementById("login-btn");
+const loginSpinner = document.getElementById("login-spinner");
+const dashboardGrid = document.getElementById("dashboard-grid");
+const restaurantList = document.getElementById("restaurant-list");
+const menuItemList = document.getElementById("menu-item-list");
+const vendorMappingList = document.getElementById("vendor-mapping-list");
+const ordersList = document.getElementById("orders-list");
+const usersList = document.getElementById("users-list");
+const sidebar = document.getElementById("sidebar");
+const sidebarToggle = document.getElementById("sidebar-toggle");
+const overlay = document.getElementById("overlay");
+const deliveryPersonnelForm = document.getElementById("delivery-personnel-form");
 
-        const loadingScreen = document.getElementById("loading-screen");
-        const loginSection = document.getElementById("login-section");
-        const mainContent = document.getElementById("main-content");
-        const notification = document.getElementById("notification");
-        const loginNotification = document.getElementById("login-notification");
-        const loginForm = document.getElementById("login-form");
-        const loginBtn = document.getElementById("login-btn");
-        const loginSpinner = document.getElementById("login-spinner");
-        const dashboardGrid = document.getElementById("dashboard-grid");
-        const restaurantList = document.getElementById("restaurant-list");
-        const menuItemList = document.getElementById("menu-item-list");
-        const vendorMappingList = document.getElementById("vendor-mapping-list");
-        const ordersList = document.getElementById("orders-list");
-        const usersList = document.getElementById("users-list");
-        const sidebar = document.getElementById("sidebar");
-        const sidebarToggle = document.getElementById("sidebar-toggle");
-        const overlay = document.getElementById("overlay");
-        const deliveryDashboard = document.getElementById("delivery-dashboard");
-        const activeDeliveryList = document.getElementById("active-delivery-list");
-        const deliveryHistoryList = document.getElementById("delivery-history-list");
-        const personnelList = document.getElementById("personnel-list");
 
-        // Force hide loading screen after 5 seconds if Firebase doesn't respond
-        setTimeout(() => {
-            if (loadingScreen && loadingScreen.style.display !== "none") {
-                console.warn("Loading screen timeout: Forcing login section display");
-                loadingScreen.style.display = "none";
-                loginSection.style.display = "flex";
-                showLoginNotification("Loading took too long. Please try logging in.", "error");
-            }
-        }, 5000);
+// Password Toggle
+if (passwordToggle && passwordInput) {
+    passwordToggle.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.querySelector('i').classList.toggle('fa-eye');
+        this.querySelector('i').classList.toggle('fa-eye-slash');
+    });
+}
 
-        function toggleSidebar() {
-            sidebar.classList.toggle("open");
-            overlay.classList.toggle("active");
-        }
+// Timeout to force hide loading screen after 5 seconds
+let timeoutTriggered = false;
+const loadingTimeout = setTimeout(() => {
+    if (loadingScreen && loadingScreen.style.display !== "none") {
+        console.warn("Loading screen timeout: Forcing login section display");
+        loadingScreen.style.display = "none";
+        loginSection.style.display = "flex";
+        mainContent.classList.add("hidden");
+        showLoginNotification("Loading took too long. Please try logging in.", "error");
+        timeoutTriggered = true;
+    }
+}, 5000);
 
-        function closeSidebar() {
-            sidebar.classList.remove("open");
-            overlay.classList.remove("active");
-        }
+// Sidebar Functions
+function toggleSidebar() {
+    sidebar.classList.toggle("open");
+    overlay.classList.toggle("active");
+}
 
-        sidebarToggle.addEventListener("click", toggleSidebar);
-        overlay.addEventListener("click", closeSidebar);
+function closeSidebar() {
+    sidebar.classList.remove("open");
+    overlay.classList.remove("active");
+}
 
-        function formatErrorMessage(errorMsg) {
-            if (errorMsg.includes('auth/invalid-email')) {
-                return 'Please enter a valid email address.';
-            } else if (errorMsg.includes('auth/user-not-found')) {
-                return 'No account found with this email. Please check and try again.';
-            } else if (errorMsg.includes('auth/wrong-password')) {
-                return 'Incorrect password. Please try again.';
-            } else if (errorMsg.includes('auth/too-many-requests')) {
-                return 'Too many login attempts. Please try again later.';
-            } else if (errorMsg.includes('auth/network-request-failed')) {
-                return 'Network error. Please check your connection and try again.';
-            } else if (errorMsg.includes('auth/email-already-in-use')) {
-                return 'This email is already registered.';
-            } else if (errorMsg.includes('auth/weak-password')) {
-                return 'Password is too weak. Please use a stronger password.';
-            } else if (errorMsg.includes('auth/operation-not-allowed')) {
-                return 'This operation is not allowed. Please contact support.';
-            } else if (errorMsg.includes('auth/')) {
-                return 'Wrong email or password. Please try again.';
-            } else {
-                return errorMsg;
-            }
-        }
+sidebarToggle.addEventListener("click", toggleSidebar);
+overlay.addEventListener("click", closeSidebar);
 
-        function showNotification(message, type = "success", target = notification) {
-            let displayMessage = message;
-            if (type === "error") {
-                displayMessage = formatErrorMessage(message);
-            }
-            target.textContent = displayMessage;
-            target.className = `notification ${type === "error" ? "error" : ""} show`;
-            setTimeout(() => target.classList.remove("show"), 5000);
-        }
+// Notification Functions
+function formatErrorMessage(errorMsg) {
+    if (errorMsg.includes('auth/invalid-email')) {
+        return 'Please enter a valid email address.';
+    } else if (errorMsg.includes('auth/user-not-found')) {
+        return 'No account found with this email. Please check and try again.';
+    } else if (errorMsg.includes('auth/wrong-password')) {
+        return 'Incorrect password. Please try again.';
+    } else if (errorMsg.includes('auth/too-many-requests')) {
+        return 'Too many login attempts. Please try again later.';
+    } else if (errorMsg.includes('auth/network-request-failed')) {
+        return 'Network error. Please check your connection and try again.';
+    } else if (errorMsg.includes('auth/email-already-in-use')) {
+        return 'This email is already registered.';
+    } else if (errorMsg.includes('auth/weak-password')) {
+        return 'Password is too weak. Please use a stronger password.';
+    } else if (errorMsg.includes('auth/operation-not-allowed')) {
+        return 'This operation is not allowed. Please contact support.';
+    } else if (errorMsg.includes('permission-denied') || errorMsg.includes('insufficient permissions')) {
+        return 'Permission denied. Please ensure you have admin access or contact support.';
+    } else if (errorMsg.includes('auth/')) {
+        return 'Wrong email or password. Please try again.';
+    } else {
+        return errorMsg;
+    }
+}
 
-        function showLoginNotification(message, type = "success") {
-            showNotification(message, type, loginNotification);
-        }
+function showNotification(message, type = "success", target = notification) {
+    let displayMessage = type === "error" ? formatErrorMessage(message) : message;
+    target.innerHTML = `<i class="fas fa-${type === "error" ? "exclamation-circle" : "check-circle"} notification-icon"></i><span>${displayMessage}</span>`;
+    target.className = `notification ${type === "error" ? "error" : ""} show`;
+    setTimeout(() => target.classList.remove("show"), 5000);
+}
 
-        function toggleSection(sectionId) {
+function showLoginNotification(message, type = "success") {
+    showNotification(message, type, loginNotification);
+}
+
+// Section Toggle
+function toggleSection(sectionId) {
     const sections = ["dashboard", "restaurants", "vendor-mappings", "orders", "users", "delivery", "settings", "edit-restaurant", "edit-menu"];
     sections.forEach(id => {
         const section = document.getElementById(id);
@@ -982,6 +994,7 @@
     closeSidebar();
 }
 
+// Restaurant Functions
 async function loadRestaurantsForDropdown() {
     try {
         const vendorSnapshot = await getDocs(collection(db, "vendorMappings"));
@@ -1009,97 +1022,97 @@ async function loadRestaurantsForDropdown() {
     }
 }
 
-        async function loadRestaurants() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "restaurant"));
-                const fragment = document.createDocumentFragment();
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    const item = document.createElement("div");
-                    item.className = "item";
-                    item.innerHTML = `
-                        <h4>${data.name || "Unnamed"}</h4>
-                        <p>ID: ${doc.id}</p>
-                        <p>Image: ${data.image || "None"}</p>
-                        <p>Delivery Time: ${data.delivery_time || "Not set"} minutes</p>
-                        <p>Status: ${data.isOpen ? "Open" : "Closed"}</p>
-                        <div class="item-actions">
-                            <button class="btn btn-secondary edit-restaurant" data-id="${doc.id}">Edit</button>
-                            <button class="btn btn-secondary delete-restaurant" data-id="${doc.id}">Delete</button>
-                        </div>
-                    `;
-                    item.querySelector(".edit-restaurant").addEventListener("click", () => editRestaurant(doc.id));
-                    item.querySelector(".delete-restaurant").addEventListener("click", () => {
-                        if (confirm(`Are you sure you want to delete restaurant ID: ${doc.id}?`)) deleteRestaurant(doc.id);
-                    });
-                    fragment.appendChild(item);
-                });
-                restaurantList.innerHTML = "";
-                restaurantList.appendChild(fragment);
-                if (!querySnapshot.size) restaurantList.innerHTML = "<p class='text-gray-400'>No restaurants found.</p>";
-            } catch (error) {
-                console.error("Error loading restaurants:", error);
-                showNotification("Failed to load restaurants", "error");
-            }
+async function loadRestaurants() {
+    try {
+        const querySnapshot = await getDocs(collection(db, "restaurant"));
+        const fragment = document.createDocumentFragment();
+        querySnapshot.forEach(doc => {
+            const data = doc.data();
+            const item = document.createElement("div");
+            item.className = "item";
+            item.innerHTML = `
+                <h4>${data.name || "Unnamed"}</h4>
+                <p>ID: ${doc.id}</p>
+                <p>Image: ${data.image || "None"}</p>
+                <p>Delivery Time: ${data.delivery_time || "Not set"} minutes</p>
+                <p>Status: ${data.isOpen ? "Open" : "Closed"}</p>
+                <div class="item-actions">
+                    <button class="btn btn-secondary edit-restaurant" data-id="${doc.id}">Edit</button>
+                    <button class="btn btn-secondary delete-restaurant" data-id="${doc.id}">Delete</button>
+                </div>
+            `;
+            item.querySelector(".edit-restaurant").addEventListener("click", () => editRestaurant(doc.id));
+            item.querySelector(".delete-restaurant").addEventListener("click", () => {
+                if (confirm(`Are you sure you want to delete restaurant ID: ${doc.id}?`)) deleteRestaurant(doc.id);
+            });
+            fragment.appendChild(item);
+        });
+        restaurantList.innerHTML = "";
+        restaurantList.appendChild(fragment);
+        if (!querySnapshot.size) restaurantList.innerHTML = "<p class='text-gray-400'>No restaurants found.</p>";
+    } catch (error) {
+        console.error("Error loading restaurants:", error);
+        showNotification("Failed to load restaurants", "error");
+    }
+}
+
+async function editRestaurant(id) {
+    try {
+        const restaurantDoc = await getDoc(doc(db, "restaurant", id));
+        if (restaurantDoc.exists()) {
+            const data = restaurantDoc.data();
+            document.getElementById("edit-restaurant-id").value = id;
+            document.getElementById("edit-restaurant-name").value = data.name || "";
+            document.getElementById("edit-restaurant-image").value = data.image || "";
+            document.getElementById("edit-delivery-time").value = data.delivery_time || "";
+            const statusCheckbox = document.getElementById("edit-restaurant-status");
+            statusCheckbox.checked = data.isOpen;
+            document.getElementById("status-text").textContent = data.isOpen ? "Open" : "Closed";
+            toggleSection("edit-restaurant");
+        }
+    } catch (error) {
+        console.error("Error loading restaurant for edit:", error);
+        showNotification("Failed to load restaurant details", "error");
+    }
+}
+
+document.getElementById("edit-restaurant-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+        const id = document.getElementById("edit-restaurant-id").value;
+        const name = document.getElementById("edit-restaurant-name").value;
+        const image = document.getElementById("edit-restaurant-image").value;
+        const delivery_time = document.getElementById("edit-delivery-time").value;
+        const isOpen = document.getElementById("edit-restaurant-status").checked;
+
+        if (!name.trim()) {
+            showNotification("Please enter a restaurant name.", "error");
+            return;
         }
 
-        async function editRestaurant(id) {
-            try {
-                const restaurantDoc = await getDoc(doc(db, "restaurant", id));
-                if (restaurantDoc.exists()) {
-                    const data = restaurantDoc.data();
-                    document.getElementById("edit-restaurant-id").value = id;
-                    document.getElementById("edit-restaurant-name").value = data.name || "";
-                    document.getElementById("edit-restaurant-image").value = data.image || "";
-                    document.getElementById("edit-delivery-time").value = data.delivery_time || "";
-                    const statusCheckbox = document.getElementById("edit-restaurant-status");
-                    statusCheckbox.checked = data.isOpen;
-                    document.getElementById("status-text").textContent = data.isOpen ? "Open" : "Closed";
-                    toggleSection("edit-restaurant");
-                }
-            } catch (error) {
-                console.error("Error loading restaurant for edit:", error);
-                showNotification("Failed to load restaurant details", "error");
-            }
+        if (delivery_time && (isNaN(delivery_time) || delivery_time < 0)) {
+            showNotification("Please enter a valid delivery time.", "error");
+            return;
         }
 
-        document.getElementById("edit-restaurant-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            try {
-                const id = document.getElementById("edit-restaurant-id").value;
-                const name = document.getElementById("edit-restaurant-name").value;
-                const image = document.getElementById("edit-restaurant-image").value;
-                const delivery_time = document.getElementById("edit-delivery-time").value;
-                const isOpen = document.getElementById("edit-restaurant-status").checked;
-
-                if (!name.trim()) {
-                    showNotification("Please enter a restaurant name.", "error");
-                    return;
-                }
-
-                if (delivery_time && (isNaN(delivery_time) || delivery_time < 0)) {
-                    showNotification("Please enter a valid delivery time.", "error");
-                    return;
-                }
-
-                await updateDoc(doc(db, "restaurant", id), {
-                    name,
-                    image,
-                    delivery_time: delivery_time ? Number(delivery_time) : null,
-                    isOpen,
-                    timestamp: Date.now()
-                });
-
-                showNotification(`Restaurant "${name}" updated successfully!`);
-                toggleSection("restaurants");
-                loadRestaurants();
-            } catch (error) {
-                console.error("Error updating restaurant:", error);
-                showNotification("Unable to update restaurant. Please try again.", "error");
-            }
+        await updateDoc(doc(db, "restaurant", id), {
+            name,
+            image,
+            delivery_time: delivery_time ? Number(delivery_time) : null,
+            isOpen,
+            timestamp: Date.now()
         });
 
-        document.getElementById("edit-menu-btn").addEventListener("click", () => {
+        showNotification(`Restaurant "${name}" updated successfully!`);
+        toggleSection("restaurants");
+        loadRestaurants();
+    } catch (error) {
+        console.error("Error updating restaurant:", error);
+        showNotification("Unable to update restaurant. Please try again.", "error");
+    }
+});
+
+document.getElementById("edit-menu-btn").addEventListener("click", () => {
     const restaurantId = document.getElementById("edit-restaurant-id").value;
     document.getElementById("current-restaurant-id").value = restaurantId;
     loadMenuItems(restaurantId);
@@ -1111,15 +1124,16 @@ document.getElementById("back-to-edit-restaurant").addEventListener("click", () 
     editRestaurant(restaurantId);
 });
 
-        document.getElementById("cancel-edit").addEventListener("click", () => {
-            toggleSection("restaurants");
-        });
+document.getElementById("cancel-edit").addEventListener("click", () => {
+    toggleSection("restaurants");
+});
 
-        document.getElementById("edit-restaurant-status").addEventListener("change", (e) => {
-            document.getElementById("status-text").textContent = e.target.checked ? "Open" : "Closed";
-        });
+document.getElementById("edit-restaurant-status").addEventListener("change", (e) => {
+    document.getElementById("status-text").textContent = e.target.checked ? "Open" : "Closed";
+});
 
-        async function loadVendorMappings() {
+// Vendor Mapping Functions
+async function loadVendorMappings() {
     try {
         const querySnapshot = await getDocs(collection(db, "vendorMappings"));
         const fragment = document.createDocumentFragment();
@@ -1147,7 +1161,8 @@ document.getElementById("back-to-edit-restaurant").addEventListener("click", () 
     }
 }
 
-        async function loadMenuItems(restaurantId) {
+// Menu Item Functions
+async function loadMenuItems(restaurantId) {
     try {
         const querySnapshot = await getDocs(collection(db, "restaurant", restaurantId, "menu"));
         const fragment = document.createDocumentFragment();
@@ -1254,153 +1269,157 @@ document.getElementById("menu-item-form").addEventListener("submit", async (e) =
     }
 });
 
-        function loadDashboard() {
-            try {
-                const now = Date.now();
-                const day = 24 * 60 * 60 * 1000;
+// Dashboard Functions
+function loadDashboard() {
+    try {
+        const now = Date.now();
+        const day = 24 * 60 * 60 * 1000;
 
-                const currentDate = new Date();
-                document.getElementById("current-date").textContent = currentDate.toLocaleDateString('en-US', {
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric'
+        const currentDate = new Date();
+        document.getElementById("current-date").textContent = currentDate.toLocaleDateString('en-US', {
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric'
+        });
+
+        let restaurantCount = 0, vendorCount = 0, orderCount = 0, userCount = 0;
+
+        onSnapshot(collection(db, "restaurant"), (snapshot) => {
+            restaurantCount = snapshot.size;
+            updateDashboard();
+        }, error => console.error("Restaurant snapshot error:", error));
+
+        onSnapshot(collection(db, "vendorMappings"), (snapshot) => {
+            vendorCount = snapshot.size;
+            updateDashboard();
+        }, error => console.error("Vendor snapshot error:", error));
+
+        onSnapshot(collection(db, "orders"), (snapshot) => {
+            orderCount = snapshot.size;
+            updateDashboard();
+        }, error => console.error("Orders snapshot error:", error));
+
+        onSnapshot(collection(db, "users"), (snapshot) => {
+            userCount = snapshot.size;
+            updateDashboard();
+        }, error => console.error("Users snapshot error:", error));
+
+        function updateDashboard() {
+            dashboardGrid.innerHTML = "";
+            const cards = [
+                { id: "restaurants", title: "Restaurants", count: restaurantCount, icon: "fa-store", tooltip: "Total restaurants" },
+                { id: "vendors", title: "Vendors", count: vendorCount, icon: "fa-user-tie", tooltip: "Total vendors" },
+                { id: "orders", title: "Orders", count: orderCount, icon: "fa-shopping-cart", tooltip: "Total orders" },
+                { id: "users", title: "Users", count: userCount, icon: "fa-users", tooltip: "Total users" }
+            ];
+            
+            cards.forEach(card => {
+                const div = document.createElement("div");
+                div.className = `dashboard-card ${card.id}`;
+                div.innerHTML = `
+                    <div class="tooltip">${card.tooltip}</div>
+                    <h3>${card.title}</h3>
+                    <div class="subtitle">Total Active</div>
+                    <p>${card.count}</p>
+                    <i class="fas ${card.icon}"></i>
+                `;
+                dashboardGrid.appendChild(div);
+            });
+        }
+    } catch (error) {
+        console.error("Error loading dashboard:", error);
+        showNotification("Unable to load dashboard. Please try again.", "error");
+    }
+}
+
+// Order Functions
+function loadOrders() {
+    try {
+        onSnapshot(collection(db, "orders"), (snapshot) => {
+            const fragment = document.createDocumentFragment();
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const items = data.items?.map(item => `${item.quantity}x ${item.name}`).join(", ") || "N/A";
+                const item = document.createElement("div");
+                item.className = "item";
+                item.innerHTML = `
+                    <h4>Order ID: ${doc.id}</h4>
+                    <p>Restaurant: ${data.restaurantId}</p>
+                    <p>Items: ${items}</p>
+                    <p>Total: GH₵${data.totalAmount.toFixed(2)}</p>
+                    <p>Status: ${data.status}</p>
+                    <p>Time: ${new Date(data.timestamp).toLocaleString()}</p>
+                    <button class="btn btn-secondary delete-order" data-id="${doc.id}">Delete</button>
+                `;
+                item.querySelector(".delete-order").addEventListener("click", () => {
+                    if (confirm(`Are you sure you want to delete order ID: ${doc.id}?`)) deleteOrder(doc.id);
                 });
+                fragment.appendChild(item);
+            });
+            ordersList.innerHTML = "";
+            ordersList.appendChild(fragment);
+            if (!snapshot.size) ordersList.innerHTML = "<p class='text-gray-400'>No orders found.</p>";
+        }, error => console.error("Orders snapshot error:", error));
+    } catch (error) {
+        console.error("Error loading orders:", error);
+        showNotification("Failed to load orders", "error");
+    }
+}
 
-                let restaurantCount = 0, vendorCount = 0, orderCount = 0, userCount = 0;
+// User Functions
+async function loadUsers() {
+    try {
+        const querySnapshot = await getDocs(collection(db, "users"));
+        const fragment = document.createDocumentFragment();
+        querySnapshot.forEach(doc => {
+            const data = doc.data();
+            const item = document.createElement("div");
+            item.className = "user-item";
+            item.innerHTML = `
+                <div class="user-details">
+                    <h4>User ID: ${doc.id}</h4>
+                    <p>${JSON.stringify(data, null, 2)
+                        .replace(/"/g, '')
+                        .replace(/{/g, '')
+                        .replace(/}/g, '')
+                        .replace(/,/g, '')
+                        .split('\n')
+                        .map(line => line.trim())
+                        .filter(line => line)
+                        .join('<br>')}</p>
+                </div>
+                <div class="user-actions">
+                    <button class="btn btn-secondary delete-user" data-id="${doc.id}">Delete</button>
+                </div>
+            `;
+            item.querySelector(".delete-user").addEventListener("click", () => {
+                if (confirm(`Are you sure you want to delete user ID: ${doc.id}?`)) deleteUser(doc.id);
+            });
+            fragment.appendChild(item);
+        });
+        usersList.innerHTML = "";
+        usersList.appendChild(fragment);
+        if (!querySnapshot.size) usersList.innerHTML = "<p class='text-gray-400'>No users found.</p>";
+    } catch (error) {
+        console.error("Error loading users:", error);
+        showNotification("Failed to load users", "error");
+    }
+}
 
-                onSnapshot(collection(db, "restaurant"), (snapshot) => {
-                    restaurantCount = snapshot.size;
-                    updateDashboard();
-                }, error => console.error("Restaurant snapshot error:", error));
+// Delete Functions
+async function deleteRestaurant(id) {
+    try {
+        await deleteDoc(doc(db, "restaurant", id));
+        showNotification("Restaurant successfully deleted!");
+        loadRestaurants();
+    } catch (error) {
+        console.error("Error deleting restaurant:", error);
+        showNotification("Unable to delete restaurant. Please try again.", "error");
+    }
+}
 
-                onSnapshot(collection(db, "vendorMappings"), (snapshot) => {
-                    vendorCount = snapshot.size;
-                    updateDashboard();
-                }, error => console.error("Vendor snapshot error:", error));
-
-                onSnapshot(collection(db, "orders"), (snapshot) => {
-                    orderCount = snapshot.size;
-                    updateDashboard();
-                }, error => console.error("Orders snapshot error:", error));
-
-                onSnapshot(collection(db, "users"), (snapshot) => {
-                    userCount = snapshot.size;
-                    updateDashboard();
-                }, error => console.error("Users snapshot error:", error));
-
-                function updateDashboard() {
-                    dashboardGrid.innerHTML = "";
-                    const cards = [
-                        { id: "restaurants", title: "Restaurants", count: restaurantCount, icon: "fa-store", tooltip: "Total restaurants" },
-                        { id: "vendors", title: "Vendors", count: vendorCount, icon: "fa-user-tie", tooltip: "Total vendors" },
-                        { id: "orders", title: "Orders", count: orderCount, icon: "fa-shopping-cart", tooltip: "Total orders" },
-                        { id: "users", title: "Users", count: userCount, icon: "fa-users", tooltip: "Total users" }
-                    ];
-                    
-                    cards.forEach(card => {
-                        const div = document.createElement("div");
-                        div.className = `dashboard-card ${card.id}`;
-                        div.innerHTML = `
-                            <div class="tooltip">${card.tooltip}</div>
-                            <h3>${card.title}</h3>
-                            <div class="subtitle">Total Active</div>
-                            <p>${card.count}</p>
-                            <i class="fas ${card.icon}"></i>
-                        `;
-                        dashboardGrid.appendChild(div);
-                    });
-                }
-            } catch (error) {
-                console.error("Error loading dashboard:", error);
-                showNotification("Unable to load dashboard. Please try again.", "error");
-            }
-        }
-
-        function loadOrders() {
-            try {
-                onSnapshot(collection(db, "orders"), (snapshot) => {
-                    const fragment = document.createDocumentFragment();
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        const items = data.items?.map(item => `${item.quantity}x ${item.name}`).join(", ") || "N/A";
-                        const item = document.createElement("div");
-                        item.className = "item";
-                        item.innerHTML = `
-                            <h4>Order ID: ${doc.id}</h4>
-                            <p>Restaurant: ${data.restaurantId}</p>
-                            <p>Items: ${items}</p>
-                            <p>Total: GH₵${data.totalAmount.toFixed(2)}</p>
-                            <p>Status: ${data.status}</p>
-                            <p>Time: ${new Date(data.timestamp).toLocaleString()}</p>
-                            <button class="btn btn-secondary delete-order" data-id="${doc.id}">Delete</button>
-                        `;
-                        item.querySelector(".delete-order").addEventListener("click", () => {
-                            if (confirm(`Are you sure you want to delete order ID: ${doc.id}?`)) deleteOrder(doc.id);
-                        });
-                        fragment.appendChild(item);
-                    });
-                    ordersList.innerHTML = "";
-                    ordersList.appendChild(fragment);
-                    if (!snapshot.size) ordersList.innerHTML = "<p class='text-gray-400'>No orders found.</p>";
-                }, error => console.error("Orders snapshot error:", error));
-            } catch (error) {
-                console.error("Error loading orders:", error);
-                showNotification("Failed to load orders", "error");
-            }
-        }
-
-        async function loadUsers() {
-            try {
-                const querySnapshot = await getDocs(collection(db, "users"));
-                const fragment = document.createDocumentFragment();
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    const item = document.createElement("div");
-                    item.className = "user-item";
-                    item.innerHTML = `
-                        <div class="user-details">
-                            <h4>User ID: ${doc.id}</h4>
-                            <p>${JSON.stringify(data, null, 2)
-                                .replace(/"/g, '')
-                                .replace(/{/g, '')
-                                .replace(/}/g, '')
-                                .replace(/,/g, '')
-                                .split('\n')
-                                .map(line => line.trim())
-                                .filter(line => line)
-                                .join('<br>')}</p>
-                        </div>
-                        <div class="user-actions">
-                            <button class="btn btn-secondary delete-user" data-id="${doc.id}">Delete</button>
-                        </div>
-                    `;
-                    item.querySelector(".delete-user").addEventListener("click", () => {
-                        if (confirm(`Are you sure you want to delete user ID: ${doc.id}?`)) deleteUser(doc.id);
-                    });
-                    fragment.appendChild(item);
-                });
-                usersList.innerHTML = "";
-                usersList.appendChild(fragment);
-                if (!querySnapshot.size) usersList.innerHTML = "<p class='text-gray-400'>No users found.</p>";
-            } catch (error) {
-                console.error("Error loading users:", error);
-                showNotification("Failed to load users", "error");
-            }
-        }
-
-        async function deleteRestaurant(id) {
-            try {
-                await deleteDoc(doc(db, "restaurant", id));
-                showNotification("Restaurant successfully deleted!");
-                loadRestaurants();
-            } catch (error) {
-                console.error("Error deleting restaurant:", error);
-                showNotification("Unable to delete restaurant. Please try again.", "error");
-            }
-        }
-
-        async function deleteVendorMapping(id) {
+async function deleteVendorMapping(id) {
     try {
         await deleteDoc(doc(db, "vendorMappings", id));
         showNotification("Vendor mapping successfully deleted!");
@@ -1412,63 +1431,64 @@ document.getElementById("menu-item-form").addEventListener("submit", async (e) =
     }
 }
 
-        async function deleteOrder(id) {
-            try {
-                await deleteDoc(doc(db, "orders", id));
-                showNotification("Order successfully deleted!");
-            } catch (error) {
-                console.error("Error deleting order:", error);
-                showNotification("Unable to delete order. Please try again.", "error");
-            }
+async function deleteOrder(id) {
+    try {
+        await deleteDoc(doc(db, "orders", id));
+        showNotification("Order successfully deleted!");
+    } catch (error) {
+        console.error("Error deleting order:", error);
+        showNotification("Unable to delete order. Please try again.", "error");
+    }
+}
+
+async function deleteUser(id) {
+    try {
+        await deleteDoc(doc(db, "users", id));
+        showNotification("User successfully deleted!");
+        loadUsers();
+    } catch (error) {
+        console.error("Error deleting user:", error);
+        showNotification("Unable to delete user. Please try again.", "error");
+    }
+}
+
+// Form Handlers
+document.getElementById("restaurant-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+        const name = document.getElementById("restaurant-name").value;
+        const image = document.getElementById("restaurant-image").value;
+        const delivery_time = document.getElementById("delivery_time").value;
+        
+        if (!name.trim()) {
+            showNotification("Please enter a restaurant name.", "error");
+            return;
+        }
+        
+        if (delivery_time && isNaN(delivery_time) || delivery_time < 0) {
+            showNotification("Please enter a valid delivery time.", "error");
+            return;
         }
 
-        async function deleteUser(id) {
-            try {
-                await deleteDoc(doc(db, "users", id));
-                showNotification("User successfully deleted!");
-                loadUsers();
-            } catch (error) {
-                console.error("Error deleting user:", error);
-                showNotification("Unable to delete user. Please try again.", "error");
-            }
-        }
-
-        document.getElementById("restaurant-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            try {
-                const name = document.getElementById("restaurant-name").value;
-                const image = document.getElementById("restaurant-image").value;
-                const delivery_time = document.getElementById("delivery_time").value;
-                
-                if (!name.trim()) {
-                    showNotification("Please enter a restaurant name.", "error");
-                    return;
-                }
-                
-                if (delivery_time && isNaN(delivery_time) || delivery_time < 0) {
-                    showNotification("Please enter a valid delivery time.", "error");
-                    return;
-                }
-
-                const docRef = await addDoc(collection(db, "restaurant"), { 
-                    name, 
-                    image, 
-                    delivery_time: delivery_time ? Number(delivery_time) : null,
-                    isOpen: false, 
-                    timestamp: Date.now() 
-                });
-                showNotification(`Restaurant "${name}" has been added successfully!`);
-                document.getElementById("restaurant-name").value = "";
-                document.getElementById("restaurant-image").value = "";
-                document.getElementById("delivery_time").value = "";
-                loadRestaurants();
-            } catch (error) {
-                console.error("Error adding restaurant:", error);
-                showNotification("Unable to add restaurant. Please try again.", "error");
-            }
+        const docRef = await addDoc(collection(db, "restaurant"), { 
+            name, 
+            image, 
+            delivery_time: delivery_time ? Number(delivery_time) : null,
+            isOpen: false, 
+            timestamp: Date.now() 
         });
+        showNotification(`Restaurant "${name}" has been added successfully!`);
+        document.getElementById("restaurant-name").value = "";
+        document.getElementById("restaurant-image").value = "";
+        document.getElementById("delivery_time").value = "";
+        loadRestaurants();
+    } catch (error) {
+        console.error("Error adding restaurant:", error);
+        showNotification("Unable to add restaurant. Please try again.", "error");
+    }
+});
 
-        document.getElementById("vendor-mapping-form").addEventListener("submit", async (e) => {
+document.getElementById("vendor-mapping-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
         const email = document.getElementById("vendor-email").value.trim();
@@ -1496,384 +1516,300 @@ document.getElementById("menu-item-form").addEventListener("submit", async (e) =
     }
 });
 
-
-
-        // Delivery Section Functions
-        async function getRestaurantName(restaurantId) {
-            try {
-                const restaurantDoc = await getDoc(doc(db, "restaurant", restaurantId));
-                return restaurantDoc.exists() ? restaurantDoc.data().name : restaurantId;
-            } catch (error) {
-                console.error("Error fetching restaurant name:", error);
-                return restaurantId;
+// Delivery Section Functions
+async function loadDeliveryPersonnel() {
+    try {
+        const personnelList = document.getElementById("personnel-list");
+        personnelList.innerHTML = `<div style="text-align:center; color:#aaa; padding:20px 0;">Loading delivery personnel...</div>`;
+        onSnapshot(collection(db, "deliveryMapping"), (snapshot) => {
+            if (!snapshot.size) {
+                personnelList.innerHTML = "<p class='text-gray-400' style='text-align:center;'>No delivery personnel found.<br>Add personnel to manage delivery accounts.</p>";
+                return;
             }
-        }
-
-        async function loadDeliveryDashboard() {
-            try {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const todayTimestamp = today.getTime();
-
-                let todayDeliveries = 0, completedToday = 0, totalAmount = 0, activeDeliveries = 0;
-
-                onSnapshot(collection(db, "orders"), (snapshot) => {
-                    todayDeliveries = 0;
-                    completedToday = 0;
-                    totalAmount = 0;
-                    activeDeliveries = 0;
-
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        const orderDate = new Date(data.timestamp);
-                        const isToday = orderDate >= today;
-
-                        if (["being_delivered", "delivered", "not_delivered", "cancelled"].includes(data.status)) {
-                            if (isToday) todayDeliveries++;
-                            if (data.status === "delivered") {
-                                if (isToday) completedToday++;
-                                totalAmount += data.totalAmount || 0;
-                            }
-                            if (data.status === "being_delivered") activeDeliveries++;
-                        }
-                    });
-
-                    deliveryDashboard.innerHTML = "";
-                    const cards = [
-                        { id: "today", title: "Today's Deliveries", count: todayDeliveries, icon: "fa-truck", tooltip: "Orders assigned today" },
-                        { id: "completed", title: "Completed Today", count: completedToday, icon: "fa-check-circle", tooltip: "Delivered orders today" },
-                        { id: "amount", title: "Total Amount", count: `GH₵${totalAmount.toFixed(2)}`, icon: "fa-money-bill", tooltip: "Total delivery revenue" },
-                        { id: "active", title: "Active Deliveries", count: activeDeliveries, icon: "fa-motorcycle", tooltip: "Ongoing deliveries" }
-                    ];
-
-                    cards.forEach(card => {
-                        const div = document.createElement("div");
-                        div.className = `dashboard-card deliveries`;
-                        div.innerHTML = `
-                            <div class="tooltip">${card.tooltip}</div>
-                            <h3>${card.title}</h3>
-                            <div class="subtitle">Current Status</div>
-                            <p>${card.count}</p>
-                            <i class="fas ${card.icon}"></i>
-                        `;
-                        deliveryDashboard.appendChild(div);
-                    });
-                }, error => console.error("Delivery dashboard snapshot error:", error));
-            } catch (error) {
-                console.error("Error loading delivery dashboard:", error);
-                showNotification("Unable to load delivery dashboard.", "error");
-            }
-        }
-
-        async function loadActiveDeliveries() {
-            try {
-                onSnapshot(query(collection(db, "orders"), where("status", "==", "being_delivered")), async (snapshot) => {
-                    const fragment = document.createDocumentFragment();
-                    for (const doc of snapshot.docs) {
-                        const data = doc.data();
-                        const items = data.items?.map(item => `${item.quantity}x ${item.name}`).join(", ") || "N/A";
-                        const restaurantName = await getRestaurantName(data.restaurantId);
-                        const item = document.createElement("div");
-                        item.className = "item";
-                        item.innerHTML = `
-                            <h4>Order ID: ${doc.id}</h4>
-                            <p>Restaurant: ${restaurantName}</p>
-                            <p>Items: ${items}</p>
-                            <p>Total: GH₵${data.totalAmount.toFixed(2)}</p>
-                            <p>Delivery To: ${data.address || "N/A"}</p>
-                            <p>Assigned To: ${data.assignedTo || "Unassigned"}</p>
-                            <p>Time: ${new Date(data.timestamp).toLocaleString()}</p>
-                            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                                <button class="btn btn-secondary mark-delivered" data-id="${doc.id}">Mark Delivered</button>
-                                <button class="btn btn-secondary mark-not-delivered" data-id="${doc.id}">Mark Not Delivered</button>
-                                <button class="btn btn-secondary reassign-delivery" data-id="${doc.id}">Reassign</button>
-                                <button class="btn btn-secondary cancel-delivery" data-id="${doc.id}">Cancel</button>
-                            </div>
-                        `;
-                        item.querySelector(".mark-delivered").addEventListener("click", () => markDelivered(doc.id));
-                        item.querySelector(".mark-not-delivered").addEventListener("click", () => markNotDelivered(doc.id));
-                        item.querySelector(".reassign-delivery").addEventListener("click", () => reassignDelivery(doc.id));
-                        item.querySelector(".cancel-delivery").addEventListener("click", () => cancelDelivery(doc.id));
-                        fragment.appendChild(item);
-                    }
-                    activeDeliveryList.innerHTML = "";
-                    activeDeliveryList.appendChild(fragment);
-                    if (!snapshot.size) activeDeliveryList.innerHTML = "<p class='text-gray-400'>No active deliveries.</p>";
-                }, error => console.error("Active deliveries snapshot error:", error));
-            } catch (error) {
-                console.error("Error loading active deliveries:", error);
-                showNotification("Failed to load active deliveries.", "error");
-            }
-        }
-
-        async function loadDeliveryHistory() {
-            try {
-                onSnapshot(query(collection(db, "orders"), where("status", "in", ["delivered", "not_delivered", "cancelled"])), async (snapshot) => {
-                    const fragment = document.createDocumentFragment();
-                    for (const doc of snapshot.docs) {
-                        const data = doc.data();
-                        const items = data.items?.map(item => `${item.quantity}x ${item.name}`).join(", ") || "N/A";
-                        const restaurantName = await getRestaurantName(data.restaurantId);
-                        const item = document.createElement("div");
-                        item.className = "item";
-                        item.innerHTML = `
-                            <h4>Order ID: ${doc.id}</h4>
-                            <p>Restaurant: ${restaurantName}</p>
-                            <p>Items: ${items}</p>
-                            <p>Total: GH₵${data.totalAmount.toFixed(2)}</p>
-                            <p>Status: ${data.status}</p>
-                            <p>Delivery To: ${data.address || "N/A"}</p>
-                            <p>Assigned To: ${data.assignedTo || "N/A"}</p>
-                            <p>Time: ${new Date(data.timestamp).toLocaleString()}</p>
-                        `;
-                        fragment.appendChild(item);
-                    }
-                    deliveryHistoryList.innerHTML = "";
-                    deliveryHistoryList.appendChild(fragment);
-                    if (!snapshot.size) deliveryHistoryList.innerHTML = "<p class='text-gray-400'>No delivery history.</p>";
-                }, error => console.error("Delivery history snapshot error:", error));
-            } catch (error) {
-                console.error("Error loading delivery history:", error);
-                showNotification("Failed to load delivery history.", "error");
-            }
-        }
-
-        async function loadDeliveryPersonnel() {
-            try {
-                onSnapshot(collection(db, "deliveryMapping"), (snapshot) => {
-                    const fragment = document.createDocumentFragment();
-                    const table = document.createElement("table");
-                    table.className = "personnel-table";
-                    table.innerHTML = `
-                        <thead>
-                            <tr>
-                                <th>Email</th>
-                                <th>Status</th>
-                                <th>Hostels</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    `;
-                    const tbody = table.querySelector("tbody");
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        const row = document.createElement("tr");
-                        row.innerHTML = `
-                            <td>${doc.id}</td>
-                            <td>${data.isActive ? "Active" : "Inactive"}</td>
-                            <td>${data.allowedHostels?.join(", ") || "None"}</td>
-                            <td>
-                                <button class="btn btn-secondary toggle-status" data-id="${doc.id}" data-active="${data.isActive}">${data.isActive ? "Deactivate" : "Activate"}</button>
-                                <button class="btn btn-secondary edit-hostels" data-id="${doc.id}">Edit Hostels</button>
-                            </td>
-                        `;
-                        row.querySelector(".toggle-status").addEventListener("click", () => togglePersonnelStatus(doc.id, data.isActive));
-                        row.querySelector(".edit-hostels").addEventListener("click", () => editHostels(doc.id, data.allowedHostels || []));
-                        tbody.appendChild(row);
-                    });
-                    const item = document.createElement("div");
-                    item.className = "item";
-                    item.appendChild(table);
-                    fragment.appendChild(item);
-                    personnelList.innerHTML = "";
-                    personnelList.appendChild(fragment);
-                    if (!snapshot.size) personnelList.innerHTML = "<p class='text-gray-400'>No delivery personnel found.</p>";
-                }, error => console.error("Delivery personnel snapshot error:", error));
-            } catch (error) {
-                console.error("Error loading delivery personnel:", error);
-                showNotification("Failed to load delivery personnel.", "error");
-            }
-        }
-
-        async function markDelivered(orderId) {
-            try {
-                await updateDoc(doc(db, "orders", orderId), {
-                    status: "delivered",
-                    updatedAt: Date.now()
-                });
-                showNotification("Order marked as delivered!");
-            } catch (error) {
-                console.error("Error marking order as delivered:", error);
-                showNotification("Unable to mark order as delivered.", "error");
-            }
-        }
-
-        async function markNotDelivered(orderId) {
-            try {
-                await updateDoc(doc(db, "orders", orderId), {
-                    status: "not_delivered",
-                    updatedAt: Date.now(),
-                    assignedTo: null
-                });
-                showNotification("Order marked as not delivered!");
-            } catch (error) {
-                console.error("Error marking order as not delivered:", error);
-                showNotification("Unable to mark order as not delivered.", "error");
-            }
-        }
-
-        async function reassignDelivery(orderId) {
-            try {
-                await updateDoc(doc(db, "orders", orderId), {
-                    assignedTo: null,
-                    updatedAt: Date.now()
-                });
-                showNotification("Order reassigned successfully!");
-            } catch (error) {
-                console.error("Error reassigning order:", error);
-                showNotification("Unable to reassign order.", "error");
-            }
-        }
-
-        async function cancelDelivery(orderId) {
-            try {
-                await updateDoc(doc(db, "orders", orderId), {
-                    status: "cancelled",
-                    updatedAt: Date.now(),
-                    assignedTo: null
-                });
-                showNotification("Order cancelled successfully!");
-            } catch (error) {
-                console.error("Error cancelling order:", error);
-                showNotification("Unable to cancel order.", "error");
-            }
-        }
-
-        async function togglePersonnelStatus(email, isActive) {
-            try {
-                await updateDoc(doc(db, "deliveryMapping", email), {
-                    isActive: !isActive,
-                    updatedAt: Date.now()
-                });
-                showNotification(`Personnel ${isActive ? "deactivated" : "activated"} successfully!`);
-            } catch (error) {
-                console.error("Error toggling personnel status:", error);
-                showNotification("Unable to toggle personnel status.", "error");
-            }
-        }
-
-        async function editHostels(email, currentHostels) {
-            try {
-                const newHostels = prompt("Enter hostels (comma-separated):", currentHostels.join(", "));
-                if (newHostels !== null) {
-                    const hostelArray = newHostels.split(",").map(h => h.trim()).filter(h => h);
-                    await updateDoc(doc(db, "deliveryMapping", email), {
-                        allowedHostels: hostelArray,
-                        updatedAt: Date.now()
-                    });
-                    showNotification("Hostels updated successfully!");
-                }
-            } catch (error) {
-                console.error("Error updating hostels:", error);
-                showNotification("Unable to update hostels.", "error");
-            }
-        }
-
-        function loadDeliverySection() {
-            loadDeliveryDashboard();
-            loadActiveDeliveries();
-            loadDeliveryHistory();
-            loadDeliveryPersonnel();
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            onAuthStateChanged(auth, (user) => {
-                try {
-                    if (user && adminEmails.includes(user.email)) {
-                        console.log("Admin logged in:", user.email);
-                        loadingScreen.style.display = "none";
-                        loginSection.style.display = "none";
-                        mainContent.classList.remove("hidden");
-                        loadDashboard();
-                        loadRestaurants();
-                        loadVendorMappings();
-                        loadOrders();
-                        loadUsers();
-                        loadDeliverySection();
-                    } else {
-                        console.log("No admin user detected");
-                        loadingScreen.style.display = "none";
-                        loginSection.style.display = "flex";
-                        mainContent.classList.add("hidden");
-                        if (user) {
-                            signOut(auth);
-                            showLoginNotification("Unauthorized: Not an admin!", "error");
-                        }
-                    }
-                } catch (error) {
-                    console.error("Auth state change error:", error);
-                    loadingScreen.style.display = "none";
-                    loginSection.style.display = "flex";
-                    showLoginNotification("Authentication error", "error");
-                }
-            }, error => {
-                console.error("Auth listener error:", error);
-                loadingScreen.style.display = "none";
-                loginSection.style.display = "flex";
-                showLoginNotification("Authentication listener failed", "error");
+            const table = document.createElement("table");
+            table.className = "personnel-table";
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Hostels</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            `;
+            const tbody = table.querySelector("tbody");
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                const createdAt = data.createdAt ? new Date(data.createdAt).toLocaleDateString() : "N/A";
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td style="max-width:120px;overflow-wrap:anywhere;">${docSnap.id}</td>
+                    <td>${data.isActive !== false ? "Active" : "Inactive"}</td>
+                    <td style="max-width:120px;overflow-wrap:anywhere;">${Array.isArray(data.allowedHostels) && data.allowedHostels.length ? data.allowedHostels.join(", ") : "None"}</td>
+                    <td>${createdAt}</td>
+                    <td>
+                        <button class="btn btn-secondary" style="margin-bottom:2px;" data-action="toggle" data-id="${docSnap.id}" data-active="${data.isActive !== false}">
+                            ${data.isActive !== false ? "Deactivate" : "Activate"}
+                        </button>
+                        <button class="btn btn-secondary" style="margin-bottom:2px;" data-action="edit" data-id="${docSnap.id}" data-hostels="${(data.allowedHostels||[]).join(',')}">Edit Hostels</button>
+                        <button class="btn btn-secondary" data-action="delete" data-id="${docSnap.id}">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
             });
+            personnelList.innerHTML = "";
+            personnelList.appendChild(table);
+
+            // Attach event listeners for actions
+            table.querySelectorAll("button[data-action]").forEach(btn => {
+                const action = btn.getAttribute("data-action");
+                const id = btn.getAttribute("data-id");
+                if (action === "toggle") {
+                    btn.onclick = async () => {
+                        const isActive = btn.getAttribute("data-active") === "true";
+                        await updateDoc(doc(db, "deliveryMapping", id), {
+                            isActive: !isActive,
+                            updatedAt: Date.now()
+                        });
+                        showNotification(`Personnel "${id}" is now ${!isActive ? "Active" : "Inactive"}.`);
+                    };
+                } else if (action === "edit") {
+                    btn.onclick = async () => {
+                        const currentHostels = btn.getAttribute("data-hostels") || "";
+                        const newHostels = prompt("Enter hostels (comma-separated):", currentHostels);
+                        if (newHostels !== null) {
+                            const hostelArray = newHostels.split(",").map(h => h.trim()).filter(h => h);
+                            await updateDoc(doc(db, "deliveryMapping", id), {
+                                allowedHostels: hostelArray,
+                                updatedAt: Date.now()
+                            });
+                            showNotification("Hostels updated successfully!");
+                        }
+                    };
+                } else if (action === "delete") {
+                    btn.onclick = async () => {
+                        if (confirm(`Are you sure you want to delete personnel: ${id}?`)) {
+                            await deleteDoc(doc(db, "deliveryMapping", id));
+                            showNotification("Personnel deleted successfully!");
+                        }
+                    };
+                }
+            });
+        }, error => {
+            personnelList.innerHTML = "<p class='text-red-400' style='text-align:center;'>Failed to load delivery personnel.</p>";
+            showNotification("Failed to load delivery personnel. Please check permissions.", "error");
+        });
+    } catch (error) {
+        document.getElementById("personnel-list").innerHTML = "<p class='text-red-400' style='text-align:center;'>Unable to load delivery personnel.</p>";
+        showNotification("Unable to load delivery personnel.", "error");
+    }
+}
+
+deliveryPersonnelForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+        const email = document.getElementById("personnel-email").value.trim();
+        const hostelsInput = document.getElementById("personnel-hostels").value.trim();
+        const hostels = hostelsInput ? hostelsInput.split(",").map(h => h.trim()).filter(h => h) : [];
+
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            showNotification("Please enter a valid email.", "error");
+            return;
+        }
+
+        const personnelRef = doc(db, "deliveryMapping", email);
+        const personnelSnap = await getDoc(personnelRef);
+        if (personnelSnap.exists()) {
+            showNotification("Personnel with this email already exists.", "error");
+            return;
+        }
+
+        await setDoc(personnelRef, {
+            isActive: true,
+            isDelivery: true,
+            allowedHostels: hostels,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
         });
 
-        document.getElementById("login-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-            if (loginBtn) {
-                loginBtn.disabled = true;
-                if (loginSpinner) loginSpinner.style.display = 'inline-block';
-            }
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            signInWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-                    if (adminEmails.includes(user.email)) {
-                        loginSection.classList.add("hidden");
-                        mainContent.classList.remove("hidden");
-                        loadDashboard();
-                    } else {
-                        showNotification("You do not have admin privileges", "error", loginNotification);
-                        signOut(auth);
-                        if (loginBtn) loginBtn.disabled = false;
-                        if (loginSpinner) loginSpinner.style.display = 'none';
-                    }
-                })
-                .catch((error) => {
-                    if (loginBtn) loginBtn.disabled = false;
-                    if (loginSpinner) loginSpinner.style.display = 'none';
-                    console.error("Login error:", error);
-                    showNotification(error.message, "error", loginNotification);
-                });
-        });
-
-        document.getElementById("dashboard-btn").addEventListener("click", () => { toggleSection("dashboard"); loadDashboard(); });
-        document.getElementById("restaurants-btn").addEventListener("click", () => { toggleSection("restaurants"); loadRestaurants(); });
-        document.getElementById("vendor-mappings-btn").addEventListener("click", () => { toggleSection("vendor-mappings"); loadVendorMappings(); });
-        document.getElementById("orders-btn").addEventListener("click", () => { toggleSection("orders"); loadOrders(); });
-        document.getElementById("users-btn").addEventListener("click", () => { toggleSection("users"); loadUsers(); });
-        document.getElementById("delivery-btn").addEventListener("click", () => { toggleSection("delivery"); loadDeliverySection(); });
-        document.getElementById("settings-btn").addEventListener("click", () => { toggleSection("settings"); });
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(registration => {
-                        console.log('Service Worker registered with scope:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.error('Service Worker registration failed:', error);
-                    });
-            });
-        }
-
-        document.getElementById("vendor-mappings-btn").addEventListener("click", () => { 
-    toggleSection("vendor-mappings"); 
-    loadVendorMappings(); 
-    loadRestaurantsForDropdown(); 
+        showNotification(`Personnel "${email}" added with ${hostels.length} hostel(s)!`);
+        document.getElementById("personnel-email").value = "";
+        document.getElementById("personnel-hostels").value = "";
+        loadDeliveryPersonnel();
+    } catch (error) {
+        console.error("Error adding personnel:", error);
+        showNotification(error.message, "error");
+    }
 });
 
-        document.getElementById("logout-btn").addEventListener("click", () => {
+async function editHostels(email, currentHostels) {
+    try {
+        const newHostels = prompt("Enter hostels (comma-separated):", currentHostels.join(", "));
+        if (newHostels !== null) {
+            const hostelArray = newHostels.split(",").map(h => h.trim()).filter(h => h);
+            await updateDoc(doc(db, "deliveryMapping", email), {
+                allowedHostels: hostelArray,
+                updatedAt: Date.now()
+            });
+            showNotification("Hostels updated successfully!");
+            loadDeliveryPersonnel();
+        }
+    } catch (error) {
+        console.error("Error updating hostels:", error);
+        showNotification("Unable to update hostels.", "error");
+    }
+}
+
+async function deletePersonnel(email) {
+    try {
+        if (confirm(`Are you sure you want to delete personnel: ${email}?`)) {
+            await deleteDoc(doc(db, "deliveryMapping", email));
+            showNotification("Personnel deleted successfully!");
+            loadDeliveryPersonnel();
+        }
+    } catch (error) {
+        console.error("Error deleting personnel:", error);
+        showNotification("Unable to delete personnel.", "error");
+    }
+}
+
+function loadDeliverySection() {
+    loadDeliveryPersonnel();
+}
+
+// Authentication Handling
+function updateUIForUser(user) {
+    console.log("Updating UI for user:", user ? user.email : "No user");
+    clearTimeout(loadingTimeout); // Clear timeout if auth resolves
+    loadingScreen.style.display = "none";
+    if (user && adminEmails.includes(user.email)) {
+        console.log("Admin logged in:", user.email);
+        loginSection.style.display = "none";
+        mainContent.classList.remove("hidden");
+        loadDashboard();
+        loadRestaurants();
+        loadVendorMappings();
+        loadOrders();
+        loadUsers();
+        loadDeliverySection();
+    } else {
+        console.log("No admin user detected");
+        loginSection.style.display = "flex";
+        mainContent.classList.add("hidden");
+        if (user) {
+            signOut(auth).then(() => {
+                showLoginNotification("Unauthorized: Not an admin!", "error");
+            }).catch(error => {
+                console.error("Sign out error:", error);
+                showLoginNotification("Failed to sign out.", "error");
+            });
+        }
+    }
+}
+
+// Initialize Auth Listener
+onAuthStateChanged(auth, (user) => {
+    try {
+        updateUIForUser(user);
+    } catch (error) {
+        console.error("Auth state change error:", error);
+        loadingScreen.style.display = "none";
+        loginSection.style.display = "flex";
+        mainContent.classList.add("hidden");
+        showLoginNotification("Authentication error", "error");
+    }
+}, error => {
+    console.error("Auth listener error:", error);
+    loadingScreen.style.display = "none";
+    loginSection.style.display = "flex";
+    mainContent.classList.add("hidden");
+    showLoginNotification("Authentication listener failed", "error");
+});
+
+// Fallback: Check auth state after 3 seconds if listener hasn't fired
+setTimeout(() => {
+    if (!timeoutTriggered && loadingScreen.style.display !== "none") {
+        console.warn("Auth listener hasn't fired, checking current user");
+        const user = auth.currentUser;
+        updateUIForUser(user);
+    }
+}, 3000);
+
+document.getElementById("login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (loginBtn) {
+        loginBtn.disabled = true;
+        if (loginSpinner) loginSpinner.style.display = 'inline-block';
+    }
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        if (adminEmails.includes(user.email)) {
+            loginSection.style.display = "none";
+            mainContent.classList.remove("hidden");
+            loadDashboard();
+        } else {
+            await signOut(auth);
+            showLoginNotification("You do not have admin privileges", "error");
+        }
+    } catch (error) {
+        console.error("Login error:", error);
+        showLoginNotification(error.message, "error");
+    } finally {
+        if (loginBtn) loginBtn.disabled = false;
+        if (loginSpinner) loginSpinner.style.display = 'none';
+    }
+});
+
+
+// Handle Delivery Personnel Form Submission
+document.getElementById("delivery-personnel-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("personnel-email").value.trim();
+    const hostelsRaw = document.getElementById("personnel-hostels").value;
+    const allowedHostels = hostelsRaw.split(',').map(h => h.trim()).filter(Boolean);
+
+    if (!email) {
+        showNotification("Please enter an email.", "error");
+        return;
+    }
+
+    try {
+        await setDoc(doc(db, "deliveryMapping", email), {
+            email,
+            allowedHostels,
+            isDelivery: true,
+            isOpen: true,
+            createdAt: Date.now()
+        });
+        showNotification(`Delivery mapping for ${email} added successfully.`);
+        document.getElementById("personnel-email").value = "";
+        document.getElementById("personnel-hostels").value = "";
+        loadDeliveryPersonnel();
+    } catch (error) {
+        console.error("Error adding delivery mapping:", error);
+        showNotification("Failed to add delivery mapping.", "error");
+    }
+});
+
+// Event Listeners
+document.getElementById("dashboard-btn").addEventListener("click", () => { toggleSection("dashboard"); loadDashboard(); });
+document.getElementById("restaurants-btn").addEventListener("click", () => { toggleSection("restaurants"); loadRestaurants(); });
+document.getElementById("vendor-mappings-btn").addEventListener("click", () => { toggleSection("vendor-mappings"); loadVendorMappings(); loadRestaurantsForDropdown(); });
+document.getElementById("orders-btn").addEventListener("click", () => { toggleSection("orders"); loadOrders(); });
+document.getElementById("users-btn").addEventListener("click", () => { toggleSection("users"); loadUsers(); });
+document.getElementById("delivery-btn").addEventListener("click", () => { toggleSection("delivery"); loadDeliverySection(); });
+document.getElementById("settings-btn").addEventListener("click", () => { toggleSection("settings"); });
+
+document.getElementById("logout-btn").addEventListener("click", () => {
     signOut(auth).then(() => {
         showLoginNotification("Logged out successfully!");
+        loadingScreen.style.display = "none";
         loginSection.style.display = "flex";
         mainContent.classList.add("hidden");
     }).catch(error => {
@@ -1883,9 +1819,21 @@ document.getElementById("menu-item-form").addEventListener("submit", async (e) =
 });
 
 document.getElementById("update-btn").addEventListener("click", () => {
-    window.location.reload(true); // Force reload like Shift+Ctrl+R
+    window.location.reload(true);
 });
 
+// Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+                console.log('Service Worker registered with scope:', registration.scope);
+            })
+            .catch(error => {
+                console.error('Service Worker registration failed:', error);
+            });
+    });
+}
     </script>
 </body>
 </html>
