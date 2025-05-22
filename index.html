@@ -738,6 +738,7 @@
             min-height: 64px;
             border: 1.5px solid #232325;
             outline: none;
+            border-color: #30c8ff;
         }
         .personnel-list-btn:hover, .personnel-list-btn:focus {
             background: linear-gradient(120deg, #2a2a2c 80%, #30c8ff 100%);
@@ -803,6 +804,7 @@
     <div class="sidebar" id="sidebar">
         <p></p><br><br>
         <button id="dashboard-btn" class="active"><i class="fas fa-chart-line"></i> Dashboard</button>
+        <button id="earnings-btn"><i class="fas fa-coins"></i> Earnings</button>
         <button id="restaurants-btn"><i class="fas fa-store"></i> Restaurants</button>
         <button id="vendor-mappings-btn"><i class="fas fa-user-tie"></i> Vendors</button>
         <button id="orders-btn"><i class="fas fa-shopping-cart"></i> Orders</button>
@@ -851,6 +853,55 @@
             </div>
             <div class="dashboard-grid" id="dashboard-grid"></div>
         </div>
+
+        <div id="earnings" class="section hidden">
+    <h2 class="text-2xl font-semibold mb-4">Earnings Overview</h2>
+
+    <div class="mb-4">
+        <select id="earnings-filter" class="input" style="max-width: 220px;">
+            <option value="all">All Time</option>
+            <option value="today">Today</option>
+            <option value="7days">Last 7 Days</option>
+            <option value="month">This Month</option>
+        </select>
+    </div>
+
+    <div class="dashboard-grid mb-6">
+        <div class="dashboard-card">
+            <h3>Total Revenue</h3>
+            <p id="total-revenue">GH₵0.00</p>
+        </div>
+        <div class="dashboard-card">
+            <h3>Pending Payouts</h3>
+            <p id="pending-payouts">GH₵0.00</p>
+        </div>
+    </div>
+
+    <div class="relative mb-4" style="text-align: right;">
+    <button id="export-toggle" class="btn btn-secondary" style="width: auto; padding: 10px 16px;">
+        <i class="fas fa-file-export mr-2"></i> Export <i class="fas fa-caret-down ml-2"></i>
+    </button>
+    <div id="export-menu" class="hidden absolute right-0 mt-2 w-40 bg-[#2c2c2e] border border-[#444] rounded-lg shadow-lg z-50">
+        <button id="export-csv-btn" class="w-full text-left px-4 py-2 hover:bg-[#3a3a3c] flex items-center gap-2">
+            <i class="fas fa-file-csv"></i> CSV
+        </button>
+        <button id="export-pdf-btn" class="w-full text-left px-4 py-2 hover:bg-[#3a3a3c] flex items-center gap-2">
+            <i class="fas fa-file-pdf"></i> PDF
+        </button>
+        <button id="export-excel-btn" class="w-full text-left px-4 py-2 hover:bg-[#3a3a3c] flex items-center gap-2">
+            <i class="fas fa-file-excel"></i> Excel
+        </button>
+    </div>
+</div>
+
+
+
+
+    <h2 class="text-xl font-semibold mb-2">Vendor Earnings</h2>
+    <div id="vendor-earnings-list"></div>
+</div>
+
+
 
         <div id="restaurants" class="section hidden">
             <h2 class="text-2xl font-semibold mb-4">Manage Restaurants</h2>
@@ -975,6 +1026,9 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const adminEmails = ["admin@gmail.com"];
+let latestVendorMap = {};
+let latestVendorNames = {};
+
 
 setPersistence(auth, browserLocalPersistence).catch(error => console.error("Persistence error:", error));
 
@@ -999,6 +1053,19 @@ const sidebar = document.getElementById("sidebar");
 const sidebarToggle = document.getElementById("sidebar-toggle");
 const overlay = document.getElementById("overlay");
 const deliveryPersonnelForm = document.getElementById("delivery-personnel-form");
+const exportToggle = document.getElementById("export-toggle");
+const exportMenu = document.getElementById("export-menu");
+
+exportToggle.addEventListener("click", () => {
+    exportMenu.classList.toggle("hidden");
+});
+
+// Close dropdown if clicking outside
+document.addEventListener("click", (e) => {
+    if (!exportToggle.contains(e.target) && !exportMenu.contains(e.target)) {
+        exportMenu.classList.add("hidden");
+    }
+});
 
 
 // Password Toggle
@@ -1078,7 +1145,7 @@ function showLoginNotification(message, type = "success") {
 
 // Section Toggle
 function toggleSection(sectionId) {
-    const sections = ["dashboard", "restaurants", "vendor-mappings", "orders", "users", "delivery", "settings", "edit-restaurant", "edit-menu"];
+const sections = ["dashboard", "restaurants", "vendor-mappings", "orders", "users", "delivery", "settings", "earnings", "edit-restaurant", "edit-menu"];
     sections.forEach(id => {
         const section = document.getElementById(id);
         if (section) {
@@ -1119,6 +1186,166 @@ async function loadRestaurantsForDropdown() {
         showNotification("Failed to load restaurants for mapping", "error");
     }
 }
+
+function loadEarnings() {
+    const totalRevenueEl = document.getElementById("total-revenue");
+    const pendingPayoutsEl = document.getElementById("pending-payouts");
+    const vendorEarningsList = document.getElementById("vendor-earnings-list");
+    const filter = document.getElementById("earnings-filter").value;
+
+    const now = new Date();
+    let startDate = new Date(0); // default: all time
+
+    if (filter === "today") {
+        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    } else if (filter === "7days") {
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    } else if (filter === "month") {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    let totalRevenue = 0;
+let pendingPayouts = 0;
+let vendorMap = {};
+
+onSnapshot(collection(db, "orders"), (snapshot) => {
+    totalRevenue = 0;
+    pendingPayouts = 0;
+    vendorMap = {}; // now allowed since it's declared as let
+
+        snapshot.forEach(doc => {
+            const order = doc.data();
+            if (!order.timestamp || !order.totalAmount || !order.restaurantId) return;
+
+            const orderDate = new Date(order.timestamp);
+            if (orderDate < startDate) return;
+
+            const amount = Number(order.totalAmount);
+            totalRevenue += amount;
+
+            if (!order.status || order.status.toLowerCase() !== "completed") {
+                pendingPayouts += amount;
+            }
+
+            if (!vendorMap[order.restaurantId]) {
+                vendorMap[order.restaurantId] = { total: 0, pending: 0, count: 0 };
+            }
+            vendorMap[order.restaurantId].total += amount;
+            vendorMap[order.restaurantId].count += 1;
+            if (!order.status || order.status.toLowerCase() !== "completed") {
+                vendorMap[order.restaurantId].pending += amount;
+            }
+        });
+
+        totalRevenueEl.textContent = `GH₵${totalRevenue.toFixed(2)}`;
+        pendingPayoutsEl.textContent = `GH₵${pendingPayouts.toFixed(2)}`;
+
+        renderVendorBreakdown(vendorMap);
+    });
+}
+
+
+
+async function renderVendorBreakdown(vendorMap) {
+    const vendorList = document.getElementById("vendor-earnings-list");
+    vendorList.innerHTML = "<p>Loading...</p>";
+
+    const snapshot = await getDocs(collection(db, "restaurant"));
+    const nameMap = {};
+    snapshot.forEach(doc => nameMap[doc.id] = doc.data().name || "Unnamed");
+
+    // 🔥 Save globally for CSV export
+    latestVendorMap = vendorMap;
+    latestVendorNames = nameMap;
+
+    const fragments = Object.entries(vendorMap).map(([vendorId, data]) => {
+        return `
+            <div class="item">
+                <h4>${nameMap[vendorId] || vendorId}</h4>
+                <p><b>Orders:</b> ${data.count}</p>
+                <p><b>Revenue:</b> GH₵${data.total.toFixed(2)}</p>
+                <p><b>Pending:</b> GH₵${data.pending.toFixed(2)}</p>
+            </div>
+        `;
+    });
+
+    document.getElementById("export-pdf-btn").addEventListener("click", () => {
+    const earningsEl = document.getElementById("earnings");
+
+    const opt = {
+        margin: 0.5,
+        filename: `vendor_earnings_${new Date().toISOString().split("T")[0]}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+
+    html2pdf().from(earningsEl).set(opt).save();
+});
+
+document.getElementById("export-excel-btn").addEventListener("click", () => {
+    if (Object.keys(latestVendorMap).length === 0) {
+        showNotification("No data to export.", "error");
+        return;
+    }
+
+    const ws_data = [["Vendor Name", "Vendor ID", "Orders", "Revenue", "Pending"]];
+    Object.entries(latestVendorMap).forEach(([vendorId, data]) => {
+        ws_data.push([
+            latestVendorNames[vendorId] || vendorId,
+            vendorId,
+            data.count,
+            data.total.toFixed(2),
+            data.pending.toFixed(2)
+        ]);
+    });
+
+    const worksheet = XLSX.utils.aoa_to_sheet(ws_data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Earnings");
+
+    XLSX.writeFile(workbook, `vendor_earnings_${new Date().toISOString().split("T")[0]}.xlsx`);
+});
+
+
+    document.getElementById("export-csv-btn").addEventListener("click", () => {
+    if (Object.keys(latestVendorMap).length === 0) {
+        showNotification("No data available to export.", "error");
+        return;
+    }
+    exportVendorEarningsCSV(latestVendorMap, latestVendorNames);
+});
+
+
+    vendorList.innerHTML = fragments.length ? fragments.join("") : "<p>No data available.</p>";
+}
+
+function exportVendorEarningsCSV(vendorMap, nameMap) {
+    const headers = ["Vendor Name", "Vendor ID", "Orders", "Revenue (GH₵)", "Pending (GH₵)"];
+    const rows = [headers];
+
+    Object.entries(vendorMap).forEach(([vendorId, data]) => {
+        const row = [
+            nameMap[vendorId] || vendorId,
+            vendorId,
+            data.count,
+            data.total.toFixed(2),
+            data.pending.toFixed(2)
+        ];
+        rows.push(row);
+    });
+
+    const csvContent = rows.map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    link.setAttribute("href", URL.createObjectURL(blob));
+    link.setAttribute("download", `vendor_earnings_${timestamp}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
 
 async function loadRestaurants() {
     try {
@@ -1381,6 +1608,7 @@ function loadDashboard() {
             day: 'numeric'
         });
 
+      
         let restaurantCount = 0, vendorCount = 0, orderCount = 0, userCount = 0;
 
         onSnapshot(collection(db, "restaurant"), (snapshot) => {
@@ -1671,7 +1899,7 @@ async function showPersonnelDetails(email) {
                 <p><b>Status:</b> <span style="color:${data.isActive !== false ? '#34c759' : '#ff3b30'};font-weight:600;">${data.isActive !== false ? "Active" : "Inactive"}</span></p>
                 <p><b>Hostels:</b> <span style="color:#30c8ff">${Array.isArray(data.allowedHostels) && data.allowedHostels.length ? data.allowedHostels.join(", ") : "None"}</span></p>
                 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:15px;">
-                    <button class="btn btn-secondary" id="toggle-personnel-status">${data.isActive !== false ? "Deactivate" : "Activate"}</button>
+                    <button class="btn btn-secondary" id="toggle-personnel-status">${data.isActive !== false ? "Close" : "Open"}</button>
                     <button class="btn btn-secondary" id="edit-personnel-hostels">Edit Hostels</button>
                     <button class="btn btn-secondary" id="delete-personnel">Delete</button>
                 </div>
@@ -1687,26 +1915,50 @@ async function showPersonnelDetails(email) {
             showPersonnelDetails(email);
         };
         document.getElementById("edit-personnel-hostels").onclick = async () => {
-            const currentHostels = Array.isArray(data.allowedHostels) ? data.allowedHostels.join(", ") : "";
-            const newHostels = prompt("Enter hostels (comma-separated):", currentHostels);
-            if (newHostels !== null) {
-                const hostelArray = newHostels.split(",").map(h => h.trim()).filter(h => h);
+            // 1. Use your static allowed hostels array
+            const allHostels = ["Hostel A", "Hostel B", "Hostel C"];
+
+            // 2. Build modal HTML
+            const currentHostels = Array.isArray(data.allowedHostels) ? data.allowedHostels : [];
+            const modal = document.createElement("div");
+            modal.id = "hostel-modal";
+            modal.style = `
+                position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;
+                background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;
+            `;
+            modal.innerHTML = `
+                <div style="background:#232325;padding:32px 20px 20px 20px;border-radius:18px;max-width:95vw;width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+                    <h3 style="font-size:1.15rem;font-weight:600;margin-bottom:18px;color:#30c8ff;text-align:center;">Select Allowed Hostels</h3>
+                    <div id="hostel-checkboxes" style="max-height:220px;overflow-y:auto;margin-bottom:18px;">
+                        ${allHostels.length ? allHostels.map(h => `
+                            <label style="display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:1rem;">
+                                <input type="checkbox" value="${h}" ${currentHostels.includes(h) ? "checked" : ""} style="accent-color:#30c8ff;width:18px;height:18px;">
+                                <span>${h}</span>
+                            </label>
+                        `).join('') : '<span style="color:#aaa;">No hostels found.</span>'}
+                    </div>
+                    <div style="display:flex;gap:12px;justify-content:center;">
+                        <button id="hostel-modal-save" class="btn btn-secondary" style="min-width:90px;">Save</button>
+                        <button id="hostel-modal-cancel" class="btn btn-tertiary" style="min-width:90px;">Cancel</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            // 3. Modal actions
+            document.getElementById("hostel-modal-cancel").onclick = () => modal.remove();
+            document.getElementById("hostel-modal-save").onclick = async () => {
+                const checked = Array.from(modal.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
                 await updateDoc(doc(db, "deliveryMapping", email), {
-                    allowedHostels: hostelArray,
+                    allowedHostels: checked,
                     updatedAt: Date.now()
                 });
                 showNotification("Hostels updated successfully!");
+                modal.remove();
                 showPersonnelDetails(email);
-            }
-        };
-        document.getElementById("delete-personnel").onclick = async () => {
-            if (confirm(`Are you sure you want to delete personnel: ${email}?`)) {
-                await deleteDoc(doc(db, "deliveryMapping", email));
-                showNotification("Personnel deleted successfully!");
-                document.getElementById("personnel-details-section").classList.add("hidden");
-                document.getElementById("delivery").classList.remove("hidden");
-                loadDeliveryPersonnel();
-            }
+            };
+            // Optional: close modal on outside click
+            modal.onclick = e => { if (e.target === modal) modal.remove(); };
         };
     } catch (error) {
         document.getElementById("personnel-details-content").innerHTML = `<p class="text-red-400" style="text-align:center;">Failed to load details.</p>`;
@@ -1853,6 +2105,22 @@ document.getElementById("delivery-personnel-form").addEventListener("submit", as
 });
 
 // Event Listeners
+document.getElementById("earnings-btn").addEventListener("click", () => {
+    toggleSection("earnings");
+    loadEarnings();
+});
+
+document.getElementById("earnings-filter").addEventListener("change", loadEarnings);
+
+document.getElementById("export-csv-btn").addEventListener("click", () => {
+    if (Object.keys(latestVendorMap).length === 0) {
+        showNotification("No data available to export.", "error");
+        return;
+    }
+    exportVendorEarningsCSV(latestVendorMap, latestVendorNames);
+});
+
+
 document.getElementById("dashboard-btn").addEventListener("click", () => { 
     toggleSection("dashboard"); 
     loadDashboard(); 
@@ -1909,5 +2177,8 @@ if ('serviceWorker' in navigator) {
     });
 }
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://raw.githack.com/eKoopmans/html2pdf/master/dist/html2pdf.bundle.js"></script>
+
 </body>
 </html>
