@@ -854,9 +854,10 @@
             <div class="dashboard-grid" id="dashboard-grid"></div>
         </div>
 
-        <div id="earnings" class="section hidden">
+       <div id="earnings" class="section hidden">
     <h2 class="text-2xl font-semibold mb-4">Earnings Overview</h2>
 
+    <!-- Date Filter (Shared) -->
     <div class="mb-4">
         <select id="earnings-filter" class="input" style="max-width: 220px;">
             <option value="all">All Time</option>
@@ -866,7 +867,8 @@
         </select>
     </div>
 
-    <div class="dashboard-grid mb-6">
+    <!-- Shared Dashboard -->
+    <div class="dashboard-grid mb-6" id="earnings-dashboard">
         <div class="dashboard-card">
             <h3>Total Revenue</h3>
             <p id="total-revenue">GH₵0.00</p>
@@ -875,6 +877,12 @@
             <h3>Pending Payouts</h3>
             <p id="pending-payouts">GH₵0.00</p>
         </div>
+    </div>
+
+    <!-- Tabs for Vendor / Delivery -->
+    <div class="flex mb-6 gap-4">
+        <button id="vendor-tab" class="btn btn-secondary">Vendor Earnings</button>
+        <button id="delivery-tab" class="btn btn-secondary">Delivery Earnings</button>
     </div>
 
     <div class="relative mb-4" style="text-align: right;">
@@ -897,8 +905,20 @@
 
 
 
-    <h2 class="text-xl font-semibold mb-2">Vendor Earnings</h2>
-    <div id="vendor-earnings-list"></div>
+     <!-- Vendor Earnings List -->
+    <div id="vendor-earnings-group">
+        <h2 class="text-xl font-semibold mb-2">Vendor Earnings</h2>
+        <div id="vendor-earnings-list"></div>
+    </div>
+
+    <!-- Delivery Earnings List -->
+    <div id="delivery-earnings-group" style="display: none;">
+        <h2 class="text-xl font-semibold mb-2">Delivery Earnings</h2>
+        <div id="delivery-earnings-list">
+         <!-- delivery-earnings-list is dynamically filled by JS -->
+
+        </div>
+    </div>
 </div>
 
 
@@ -1241,8 +1261,63 @@ onSnapshot(collection(db, "orders"), (snapshot) => {
         pendingPayoutsEl.textContent = `GH₵${pendingPayouts.toFixed(2)}`;
 
         renderVendorBreakdown(vendorMap);
+
+        let deliveryMap = {};
+
+snapshot.forEach(doc => {
+    const order = doc.data();
+    if (!order.timestamp || !order.deliveryPersonId || !order.status) return;
+
+    const orderDate = new Date(order.timestamp);
+    if (orderDate < startDate) return;
+
+    const status = order.status.toLowerCase();
+    if (status !== "delivered" && status !== "completed") return;
+
+    const deliveryId = order.deliveryPersonId;
+
+    if (!deliveryMap[deliveryId]) {
+        deliveryMap[deliveryId] = { total: 0, pending: 0, count: 0 };
+    }
+
+    deliveryMap[deliveryId].count += 1;
+    deliveryMap[deliveryId].total += 5; // GH₵5 per delivery
+
+    if (status !== "completed") {
+        deliveryMap[deliveryId].pending += 5;
+    }
+});
+
+renderDeliveryBreakdown(deliveryMap);
+
+
     });
 }
+
+async function renderDeliveryBreakdown(deliveryMap) {
+    const deliveryList = document.getElementById("delivery-earnings-list");
+    deliveryList.innerHTML = "<p>Loading...</p>";
+
+    const userSnapshot = await getDocs(collection(db, "users"));
+    const nameMap = {};
+    userSnapshot.forEach(doc => {
+        const data = doc.data();
+        nameMap[doc.id] = data.name || data.email || doc.id;
+    });
+
+    const html = Object.entries(deliveryMap).map(([id, data]) => `
+        <div class="item">
+            <h4>${nameMap[id] || id}</h4>
+            <p><b>Deliveries:</b> ${data.count}</p>
+            <p><b>Earnings:</b> GH₵${data.total.toFixed(2)}</p>
+            <p><b>Pending:</b> GH₵${data.pending.toFixed(2)}</p>
+        </div>
+    `).join("");
+
+    deliveryList.innerHTML = html || "<p>No delivery data available.</p>";
+}
+
+
 
 
 
@@ -1268,6 +1343,30 @@ async function renderVendorBreakdown(vendorMap) {
             </div>
         `;
     });
+
+    async function renderDeliveryBreakdown(deliveryMap) {
+    const deliveryList = document.getElementById("delivery-earnings-list");
+    deliveryList.innerHTML = "<p>Loading...</p>";
+
+    // You’ll need a way to map delivery personnel ID to names if available
+    const userSnapshot = await getDocs(collection(db, "users"));
+    const nameMap = {};
+    userSnapshot.forEach(doc => nameMap[doc.id] = doc.data().name || doc.data().email || "Unnamed");
+
+    const fragments = Object.entries(deliveryMap).map(([personnelId, data]) => {
+        return `
+            <div class="item">
+                <h4>${nameMap[personnelId] || personnelId}</h4>
+                <p><b>Orders:</b> ${data.count}</p>
+                <p><b>Revenue:</b> GH₵${data.total.toFixed(2)}</p>
+                <p><b>Pending:</b> GH₵${data.pending.toFixed(2)}</p>
+            </div>
+        `;
+    });
+
+    deliveryList.innerHTML = fragments.length ? fragments.join("") : "<p>No data available.</p>";
+}
+
 
     document.getElementById("export-pdf-btn").addEventListener("click", () => {
     const earningsEl = document.getElementById("earnings");
@@ -2163,6 +2262,17 @@ document.getElementById("logout-btn").addEventListener("click", () => {
 document.getElementById("update-btn").addEventListener("click", () => {
     window.location.reload(true);
 });
+document.getElementById("vendor-tab").addEventListener("click", () => {
+    document.getElementById("vendor-earnings-group").style.display = "block";
+    document.getElementById("delivery-earnings-group").style.display = "none";
+});
+
+document.getElementById("delivery-tab").addEventListener("click", () => {
+    document.getElementById("vendor-earnings-group").style.display = "none";
+    document.getElementById("delivery-earnings-group").style.display = "block";
+});
+
+
 
 // Service Worker registration (optional, keep as is if you use it)
 if ('serviceWorker' in navigator) {
