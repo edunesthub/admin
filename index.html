@@ -1792,44 +1792,134 @@ function loadOrders() {
     }
 }
 
+
 // User Functions
 async function loadUsers() {
     try {
         const querySnapshot = await getDocs(collection(db, "users"));
-        const fragment = document.createDocumentFragment();
+        const usersArray = [];
+
         querySnapshot.forEach(doc => {
             const data = doc.data();
+            usersArray.push({ id: doc.id, data });
+        });
+
+        // Sort by dateJoined or createdAt, newest first
+        usersArray.sort((a, b) => {
+            const dateA = a.data.dateJoined || a.data.createdAt;
+            const dateB = b.data.dateJoined || b.data.createdAt;
+            if (dateA && dateB) return new Date(dateB) - new Date(dateA);
+            if (dateA) return -1;
+            if (dateB) return 1;
+            return 0;
+        });
+
+        const fragment = document.createDocumentFragment();
+
+        usersArray.forEach(({ id, data }) => {
             const item = document.createElement("div");
             item.className = "user-item";
+
+            const createdAt = formatDate(data.dateJoined || data.createdAt);
+            const name = data.name || "";
+            const userId = data.userId || "N/A";
+            const phone = data.phone || "N/A";
+            const email = data.email || "N/A";
+
             item.innerHTML = `
                 <div class="user-details">
-                    <h4>User ID: ${doc.id}</h4>
-                    <p>${JSON.stringify(data, null, 2)
-                        .replace(/"/g, '')
-                        .replace(/{/g, '')
-                        .replace(/}/g, '')
-                        .replace(/,/g, '')
-                        .split('\n')
-                        .map(line => line.trim())
-                        .filter(line => line)
-                        .join('<br>')}</p>
+                    <h4 class="name-display">${name}</h4>
+                    <input type="text" class="edit-name input hidden" value="${name}" style="max-width: 100%;" />
+                    <p><strong>User ID:</strong> ${userId}</p>
+                    <p><strong>Phone:</strong> ${phone}</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Created At:</strong> ${createdAt || 'N/A'}</p>
                 </div>
                 <div class="user-actions">
-                    <button class="btn btn-secondary delete-user" data-id="${doc.id}">Delete</button>
+                    <button class="btn btn-secondary edit-name-btn">Edit</button>
+                    <button class="btn btn-secondary save-name-btn hidden">Save</button>
+                    <button class="btn btn-tertiary cancel-edit-btn hidden">Cancel</button>
+                    <button class="btn btn-primary delete-user" data-id="${id}">Delete</button>
                 </div>
             `;
-            item.querySelector(".delete-user").addEventListener("click", () => {
-                if (confirm(`Are you sure you want to delete user ID: ${doc.id}?`)) deleteUser(doc.id);
+
+            const editBtn = item.querySelector(".edit-name-btn");
+            const saveBtn = item.querySelector(".save-name-btn");
+            const cancelBtn = item.querySelector(".cancel-edit-btn");
+            const nameInput = item.querySelector(".edit-name");
+            const nameDisplay = item.querySelector(".name-display");
+
+            editBtn.addEventListener("click", () => {
+                nameDisplay.classList.add("hidden");
+                nameInput.classList.remove("hidden");
+                saveBtn.classList.remove("hidden");
+                cancelBtn.classList.remove("hidden");
+                editBtn.classList.add("hidden");
             });
+
+            cancelBtn.addEventListener("click", () => {
+                nameInput.value = nameDisplay.textContent;
+                nameDisplay.classList.remove("hidden");
+                nameInput.classList.add("hidden");
+                saveBtn.classList.add("hidden");
+                cancelBtn.classList.add("hidden");
+                editBtn.classList.remove("hidden");
+            });
+
+            saveBtn.addEventListener("click", async () => {
+                const newName = nameInput.value.trim();
+                if (!newName) {
+                    showNotification("Name cannot be empty", "error");
+                    return;
+                }
+                await updateDoc(doc(db, "users", id), { name: newName });
+                nameDisplay.textContent = newName;
+                nameDisplay.classList.remove("hidden");
+                nameInput.classList.add("hidden");
+                saveBtn.classList.add("hidden");
+                cancelBtn.classList.add("hidden");
+                editBtn.classList.remove("hidden");
+                showNotification("Name updated successfully");
+            });
+
+            item.querySelector(".delete-user").addEventListener("click", () => {
+                if (confirm(`Are you sure you want to delete user ID: ${id}?`)) {
+                    deleteUser(id);
+                }
+            });
+
             fragment.appendChild(item);
         });
+
         usersList.innerHTML = "";
         usersList.appendChild(fragment);
-        if (!querySnapshot.size) usersList.innerHTML = "<p class='text-gray-400'>No users found.</p>";
+
+        if (!usersArray.length) {
+            usersList.innerHTML = "<p class='text-gray-400'>No users found.</p>";
+        }
+
     } catch (error) {
         console.error("Error loading users:", error);
         showNotification("Failed to load users", "error");
     }
+}
+
+// Format date as "27 May, 2025"
+function formatDate(timestamp) {
+    if (!timestamp) return null;
+    const date = new Date(timestamp);
+
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = date.toLocaleString('en-US', { month: 'short' });
+    const year = date.getFullYear();
+
+    const time = date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    });
+
+    return `${day} ${month}, ${year} at ${time}`;
 }
 
 // Delete Functions
