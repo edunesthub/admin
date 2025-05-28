@@ -1035,23 +1035,38 @@
             
         </div>
 
-        <div id="app" class="section hidden">
-    <h2 class="text-2xl font-semibold mb-4">App Settings</h2>
-    <div id="app-trending-list">Loading restaurants...</div>
+        <!-- ✅ APP SECTION (Add this inside your <body> tag) -->
+<div id="app" class="section hidden">
+  <h2 class="text-2xl font-semibold mb-4">App Settings</h2>
+  <p class="text-white mb-3">Toggle trending status and reorder</p>
+  
+  <div id="trending-toggle-list" class="mb-4"></div> <!-- ⬅️ NEW toggle list -->
+
+  <p class="text-white mb-2">Set custom trending order below</p>
+<div id="trending-order-list" class="mb-3"></div>
+
 </div>
 
 
+
+
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { 
-    getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, deleteDoc, updateDoc, query, onSnapshot, where
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+import {
+  getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs,
+  deleteDoc, updateDoc, query, onSnapshot, where, orderBy
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
 import { 
     getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence 
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
 const appBtn = document.getElementById("app-btn");
-appBtn.addEventListener("click", () => toggleSection("app"));
+appBtn.addEventListener("click", () => {
+  toggleSection("app");
+  loadTrendingToggles();
+  loadTrendingList();
+});
 
 const firebaseConfig = {
     apiKey: "AIzaSyADvpUQWo75ExePGoCRirD2mM-lmfM4Cmc",
@@ -1200,53 +1215,108 @@ const sections = ["dashboard", "restaurants", "vendor-mappings", "orders", "user
     closeSidebar();
 }
 async function loadTrendingToggles() {
-  const listContainer = document.getElementById("app-trending-list");
-  listContainer.innerHTML = "<p>Loading...</p>";
-  try {
-    const snapshot = await getDocs(collection(db, "restaurant"));
-    if (snapshot.empty) {
-      listContainer.innerHTML = "<p>No restaurants found.</p>";
-      return;
-    }
-    const fragment = document.createDocumentFragment();
-    snapshot.forEach(docSnap => {
-      const data = docSnap.data();
-      const wrapper = document.createElement("div");
-      wrapper.className = "user-item";
-      wrapper.innerHTML = `
-        <div class="user-details">
-          <h4>${data.name || "Unnamed"}</h4>
-          <p>ID: ${docSnap.id}</p>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" ${data.isTrending ? "checked" : ""}>
-          <span class="slider"></span>
-        </label>
-      `;
-      const checkbox = wrapper.querySelector("input[type='checkbox']");
-      checkbox.addEventListener("change", async (e) => {
-        try {
-          await updateDoc(doc(db, "restaurant", docSnap.id), {
-            isTrending: e.target.checked
-          });
-          showNotification(`"${data.name}" is now ${e.target.checked ? "trending" : "not trending"}.`);
-        } catch (error) {
-          console.error("Update error:", error);
-          showNotification("Failed to update trending status", "error");
-        }
+  const container = document.getElementById("trending-toggle-list");
+  container.innerHTML = "Loading...";
+  const snapshot = await getDocs(collection(db, "restaurant"));
+
+  container.innerHTML = "";
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    const id = docSnap.id;
+
+    const div = document.createElement("div");
+    div.className = "user-item";
+    div.innerHTML = `
+      <div class="user-details">
+        <h4>${data.name || "Unnamed"}</h4>
+        <p>ID: ${id}</p>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" ${data.isTrending ? "checked" : ""}>
+        <span class="slider"></span>
+      </label>
+    `;
+
+    const checkbox = div.querySelector("input");
+    checkbox.addEventListener("change", async () => {
+      await updateDoc(doc(db, "restaurant", id), {
+        isTrending: checkbox.checked
       });
-      fragment.appendChild(wrapper);
+      showNotification(`${data.name} is now ${checkbox.checked ? "trending" : "not trending"}`);
+      loadTrendingList(); // reload the list
     });
-    listContainer.innerHTML = "";
-    listContainer.appendChild(fragment);
-  } catch (err) {
-    console.error("Failed to load trending toggles:", err);
-    listContainer.innerHTML = "<p class='text-red-500'>Error loading restaurants</p>";
-  }
+
+    container.appendChild(div);
+  });
 }
 
 // Load on section open
-appBtn.addEventListener("click", loadTrendingToggles);
+appBtn.addEventListener("click", loadTrendingList);
+async function loadTrendingList() {
+  const container = document.getElementById("trending-order-list");
+  container.innerHTML = "Loading...";
+
+  const q = query(collection(db, "restaurant"), where("isTrending", "==", true));
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    container.innerHTML = "<p>No trending restaurants found.</p>";
+    return;
+  }
+
+  container.innerHTML = "";
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    const id = docSnap.id;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "user-item";
+    wrapper.innerHTML = `
+      <div class="user-details">
+        <h4>${data.name || "Unnamed"}</h4>
+        <p>ID: ${id}</p>
+        <p>Trending Order: <strong>${data.trendingOrder ?? "Not set"}</strong></p>
+      </div>
+      <div class="user-actions">
+        <button class="btn btn-secondary edit-btn">Edit</button>
+      </div>
+    `;
+
+    const editBtn = wrapper.querySelector(".edit-btn");
+
+    editBtn.addEventListener("click", () => {
+      const actionsDiv = wrapper.querySelector(".user-actions");
+      actionsDiv.innerHTML = `
+        <input type="number" min="0" value="${data.trendingOrder ?? ""}" placeholder="Order #" class="input" style="width: 70px;" />
+        <button class="btn btn-primary save-btn">Save</button>
+      `;
+
+      const saveBtn = actionsDiv.querySelector(".save-btn");
+      const input = actionsDiv.querySelector("input");
+
+      saveBtn.addEventListener("click", async () => {
+        const order = parseInt(input.value.trim());
+        if (isNaN(order)) {
+          showNotification("Please enter a valid order number", "error");
+          return;
+        }
+
+        try {
+          await updateDoc(doc(db, "restaurant", id), {
+            trendingOrder: order
+          });
+          showNotification(`Trending order saved for ${data.name} ✅`);
+          loadTrendingList(); // refresh
+        } catch (err) {
+          console.error(err);
+          showNotification("Failed to update order", "error");
+        }
+      });
+    });
+
+    container.appendChild(wrapper);
+  });
+}
 
 
 // Restaurant Functions
@@ -2432,6 +2502,15 @@ document.getElementById("delivery-tab").addEventListener("click", () => {
     document.getElementById("delivery-earnings-group").style.display = "block";
 });
 
+
+appBtn.addEventListener("click", () => {
+  toggleSection("app");
+  loadTrendingList();
+});
+
+
+
+let trendingDocs = [];
 
 
 // Service Worker registration (optional, keep as is if you use it)
