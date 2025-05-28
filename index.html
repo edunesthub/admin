@@ -1743,10 +1743,10 @@ function loadDashboard() {
         function updateDashboard() {
             dashboardGrid.innerHTML = "";
             const cards = [
+                  { id: "users", title: "Users", count: userCount, icon: "fa-users", tooltip: "Total users" },
+                   { id: "orders", title: "Orders", count: orderCount, icon: "fa-shopping-cart", tooltip: "Total orders" },
                 { id: "restaurants", title: "Restaurants", count: restaurantCount, icon: "fa-store", tooltip: "Total restaurants" },
-                { id: "vendors", title: "Vendors", count: vendorCount, icon: "fa-user-tie", tooltip: "Total vendors" },
-                { id: "orders", title: "Orders", count: orderCount, icon: "fa-shopping-cart", tooltip: "Total orders" },
-                { id: "users", title: "Users", count: userCount, icon: "fa-users", tooltip: "Total users" }
+                { id: "vendors", title: "Vendors", count: vendorCount, icon: "fa-user-tie", tooltip: "Total vendors" }
             ];
             
             cards.forEach(card => {
