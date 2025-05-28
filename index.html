@@ -227,7 +227,17 @@
             margin-top: 10px;
         }
         .sidebar {
-            position: fixed;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100%;
+    background: rgba(15, 15, 17, 0.98);
+    backdrop-filter: blur(8px);
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+                position: fixed;
             top: 0;
             left: -250px;
             width: 250px;
@@ -2105,7 +2115,7 @@ async function showPersonnelDetails(email) {
         };
         document.getElementById("edit-personnel-hostels").onclick = async () => {
             // 1. Use your static allowed hostels array
-            const allHostels = ["Hostel A", "Hostel B", "Hostel C"];
+            const allHostels = ["Hostel A", "Hostel B", "Hostel C", "Heavens Gate Block A", "Heavens Gate Block B","Heavens Gate Block C", "Abrempong Hostel", "Prestige Hostel"];
 
             // 2. Build modal HTML
             const currentHostels = Array.isArray(data.allowedHostels) ? data.allowedHostels : [];
@@ -2377,8 +2387,3 @@ if ('serviceWorker' in navigator) {
     });
 }
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://raw.githack.com/eKoopmans/html2pdf/master/dist/html2pdf.bundle.js"></script>
-
-</body>
-</html>
