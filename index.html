@@ -1256,7 +1256,7 @@ async function loadTrendingList() {
   const container = document.getElementById("trending-order-list");
   container.innerHTML = "Loading...";
 
-  const q = query(collection(db, "restaurant"), where("isTrending", "==", true));
+  const q = query(collection(db, "restaurant"));
   const snapshot = await getDocs(q);
 
   if (snapshot.empty) {
