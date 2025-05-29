@@ -814,11 +814,11 @@
     <div class="sidebar" id="sidebar">
         <p></p><br><br>
         <button id="dashboard-btn" class="active"><i class="fas fa-chart-line"></i> Dashboard</button>
+        <button id="users-btn"><i class="fas fa-users"></i> Users</button>
         <button id="earnings-btn"><i class="fas fa-coins"></i> Earnings</button>
         <button id="restaurants-btn"><i class="fas fa-store"></i> Restaurants</button>
         <button id="vendor-mappings-btn"><i class="fas fa-user-tie"></i> Vendors</button>
         <button id="orders-btn"><i class="fas fa-shopping-cart"></i> Orders</button>
-        <button id="users-btn"><i class="fas fa-users"></i> Users</button>
         <button id="delivery-btn"><i class="fas fa-motorcycle"></i> Delivery</button>
         <button id="settings-btn"><i class="fas fa-cog"></i> Settings</button>
         <button id="app-btn"><i class="fas fa-mobile-alt"></i> App</button>
@@ -1997,38 +1997,95 @@ function loadDashboard() {
 
 // Order Functions
 function loadOrders() {
-    try {
-        onSnapshot(collection(db, "orders"), (snapshot) => {
-            const fragment = document.createDocumentFragment();
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const items = data.items?.map(item => `${item.quantity}x ${item.name}`).join(", ") || "N/A";
-                const item = document.createElement("div");
-                item.className = "item";
-                item.innerHTML = `
-                    <h4>Order ID: ${doc.id}</h4>
-                    <p>Restaurant: ${data.restaurantId}</p>
-                    <p>Items: ${items}</p>
-                    <p>Total: GH₵${data.totalAmount.toFixed(2)}</p>
-                    <p>Status: ${data.status}</p>
-                    <p>Time: ${new Date(data.timestamp).toLocaleString()}</p>
-                    <button class="btn btn-secondary delete-order" data-id="${doc.id}">Delete</button>
-                `;
-                item.querySelector(".delete-order").addEventListener("click", () => {
-                    if (confirm(`Are you sure you want to delete order ID: ${doc.id}?`)) deleteOrder(doc.id);
-                });
-                fragment.appendChild(item);
-            });
-            ordersList.innerHTML = "";
-            ordersList.appendChild(fragment);
-            if (!snapshot.size) ordersList.innerHTML = "<p class='text-gray-400'>No orders found.</p>";
-        }, error => console.error("Orders snapshot error:", error));
-    } catch (error) {
-        console.error("Error loading orders:", error);
-        showNotification("Failed to load orders", "error");
-    }
-}
+  try {
+    onSnapshot(query(collection(db, "orders"), orderBy("timestamp", "desc")), (snapshot) => {
+      if (snapshot.empty) {
+        ordersList.innerHTML = "<p style='color:#aaa;text-align:center;'>No orders yet.</p>";
+        return;
+      }
 
+      ordersList.innerHTML = "";
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const orderId = doc.id;
+        const time = data.timestamp?.toDate().toLocaleString() || "Unknown";
+        const cart = data.cart || [];
+        const delivery = data.deliveryDetails || {};
+        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const processingFee = data.processingFee ?? 2.00;
+        const deliveryFee = data.deliveryFee ?? 3.00;
+        const total = data.totalAmount ?? (subtotal + processingFee + deliveryFee);
+        const status = data.status || "pending";
+
+        const statusColors = {
+          "pending": "bg-yellow-500 text-black",
+          "being_delivered": "bg-blue-500 text-white",
+          "delivered": "bg-green-500 text-white",
+          "not_delivered": "bg-red-500 text-white"
+        };
+        const statusText = {
+          "pending": "Pending",
+          "being_delivered": "In Transit",
+          "delivered": "Delivered",
+          "not_delivered": "Failed"
+        };
+
+        const itemDiv = document.createElement("div");
+        itemDiv.className = "rounded-xl p-4 mb-4 shadow-md cursor-pointer transition-all duration-200";
+        itemDiv.style.background = "#2b2b2d";
+
+        const statusBadge = `<span class="px-3 py-1 rounded-full text-xs font-semibold ${statusColors[status] || "bg-gray-600 text-white"}">
+          ${statusText[status] || status}
+        </span>`;
+
+        itemDiv.innerHTML = `
+          <div class="flex justify-between items-center flex-wrap mb-2 order-header">
+            <div>
+              <h4 class="text-white font-semibold text-lg mb-1">Order #${orderId}</h4>
+              <p class="text-sm text-gray-400">${time}</p>
+            </div>
+            <div class="mt-2 sm:mt-0">
+              ${statusBadge}
+            </div>
+          </div>
+          <div class="order-details mt-2 text-sm text-gray-300 hidden">
+            <p><strong>Location:</strong> ${delivery.hostel || "-"}, Room ${delivery.location || "-"}</p>
+            <p><strong>Contact:</strong> ${delivery.contactNumber || "-"}</p>
+            <p><strong>Note:</strong> ${delivery.note || "None"}</p>
+            <ul class="list-disc list-inside text-white text-sm my-2">
+              ${cart.map(item => `<li>${item.quantity}x ${item.name} - GH₵${(item.price * item.quantity).toFixed(2)}</li>`).join("")}
+            </ul>
+            <p><strong>Subtotal:</strong> GH₵${subtotal.toFixed(2)}</p>
+            <p><strong>Processing Fee:</strong> GH₵${processingFee.toFixed(2)}</p>
+            <p><strong>Delivery Fee:</strong> GH₵${deliveryFee.toFixed(2)}</p>
+            <p class="text-white font-bold mt-1"><strong>Total:</strong> GH₵${total.toFixed(2)}</p>
+            <button class="btn btn-secondary delete-order mt-3" data-id="${orderId}">Delete</button>
+          </div>
+        `;
+
+        // Toggle on click
+        itemDiv.addEventListener("click", (e) => {
+          if (e.target.classList.contains("delete-order")) return; // prevent toggle on delete
+          const details = itemDiv.querySelector(".order-details");
+          details.classList.toggle("hidden");
+        });
+
+        // Delete listener
+        itemDiv.querySelector(".delete-order").addEventListener("click", () => {
+          if (confirm(`Delete order ID: ${orderId}?`)) deleteOrder(orderId);
+        });
+
+        ordersList.appendChild(itemDiv);
+      });
+    }, err => {
+      console.error(err);
+      ordersList.innerHTML = "<p class='text-red-500'>Failed to load orders.</p>";
+    });
+  } catch (err) {
+    console.error(err);
+    showNotification("Error loading orders", "error");
+  }
+}
 
 // User Functions
 async function loadUsers() {
