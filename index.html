@@ -822,6 +822,8 @@
         <button id="delivery-btn"><i class="fas fa-motorcycle"></i> Delivery</button>
         <button id="settings-btn"><i class="fas fa-cog"></i> Settings</button>
         <button id="app-btn"><i class="fas fa-mobile-alt"></i> App</button>
+        <button id="fees-btn"><i class="fas fa-money-bill-wave"></i> Fees</button>
+
 
     </div>
 
@@ -1047,6 +1049,11 @@
 
 </div>
 
+<div id="fees" class="section hidden">
+  <h2 class="text-2xl font-semibold mb-4">Manage Delivery Fees</h2>
+  <div id="fees-list" class="space-y-4"></div>
+</div>
+
 
 
 
@@ -1201,7 +1208,7 @@ function showLoginNotification(message, type = "success") {
 
 // Section Toggle
 function toggleSection(sectionId) {
-const sections = ["dashboard", "restaurants", "vendor-mappings", "orders", "users", "delivery", "settings", "earnings", "edit-restaurant", "edit-menu", "app"];
+const sections = ["dashboard", "restaurants", "vendor-mappings", "orders", "users", "delivery", "settings", "earnings", "edit-restaurant", "edit-menu", "app", "fees"];
     sections.forEach(id => {
         const section = document.getElementById(id);
         if (section) {
@@ -2207,6 +2214,86 @@ async function loadDeliveryPersonnel() {
     }
 }
 
+async function loadFees() {
+  const container = document.getElementById("fees-list");
+  container.innerHTML = "Loading...";
+
+  const snapshot = await getDocs(collection(db, "deliveryFees"));
+  if (snapshot.empty) {
+    container.innerHTML = "<p>No delivery fees found.</p>";
+    return;
+  }
+
+  const allHostels = [
+    "Hostel A", "Hostel B", "Hostel C", 
+    "Heavens Gate Block A", "Heavens Gate Block B", "Heavens Gate Block C", 
+    "Abrempong Hostel", "Prestige Hostel"
+  ];
+
+  const feeMap = {};
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    if (data.name) feeMap[data.name] = { ...data, id: doc.id };
+  });
+
+  container.innerHTML = "";
+
+  allHostels.forEach(name => {
+    const data = feeMap[name];
+    if (!data) return; // Skip if no fee exists for that hostel
+
+    const card = document.createElement("div");
+    card.className = "item";
+    card.innerHTML = `
+      <h4 class="text-white font-semibold text-lg">${data.name}</h4>
+      <p class="text-gray-300 mb-2">Delivery Fee: GH₵<span class="fee-value">${data.fee}</span></p>
+      <div class="item-actions">
+        <button class="btn btn-secondary edit-fee-btn">Edit</button>
+      </div>
+    `;
+
+    const actions = card.querySelector(".item-actions");
+    const editBtn = card.querySelector(".edit-fee-btn");
+
+    editBtn.addEventListener("click", () => {
+      actions.innerHTML = `
+        <input type="number" min="0" value="${data.fee}" class="input fee-input" placeholder="Enter fee" style="max-width:100px;">
+        <button class="btn btn-primary save-fee-btn">Save</button>
+        <button class="btn btn-tertiary cancel-fee-btn">Cancel</button>
+      `;
+
+      const feeInput = actions.querySelector(".fee-input");
+      const saveBtn = actions.querySelector(".save-fee-btn");
+      const cancelBtn = actions.querySelector(".cancel-fee-btn");
+
+      cancelBtn.addEventListener("click", () => loadFees());
+
+      saveBtn.addEventListener("click", async () => {
+        const newFee = parseFloat(feeInput.value);
+        if (isNaN(newFee) || newFee < 0) {
+          showNotification("Please enter a valid non-negative fee.", "error");
+          return;
+        }
+
+        try {
+          await setDoc(doc(db, "deliveryFees", data.id), {
+            ...data,
+            fee: newFee
+          });
+          showNotification(`Fee updated for ${data.name}`, "success");
+          loadFees();
+        } catch (err) {
+          console.error(err);
+          showNotification("Failed to update fee.", "error");
+        }
+      });
+    });
+
+    container.appendChild(card);
+  });
+}
+
+
 async function showPersonnelDetails(email) {
     try {
         document.getElementById("delivery").classList.add("hidden");
@@ -2478,6 +2565,11 @@ document.getElementById("delivery-btn").addEventListener("click", () => {
 document.getElementById("settings-btn").addEventListener("click", () => { 
     toggleSection("settings"); 
 });
+document.getElementById("fees-btn").addEventListener("click", () => {
+  toggleSection("fees");
+  loadFees();
+});
+
 document.getElementById("logout-btn").addEventListener("click", () => {
     signOut(auth).then(() => {
         showLoginNotification("Logged out successfully!");
