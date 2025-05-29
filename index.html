@@ -823,6 +823,8 @@
         <button id="settings-btn"><i class="fas fa-cog"></i> Settings</button>
         <button id="app-btn"><i class="fas fa-mobile-alt"></i> App</button>
         <button id="fees-btn"><i class="fas fa-money-bill-wave"></i> Fees</button>
+        <button id="discounts-btn"><i class="fas fa-percentage"></i> Discounts</button>
+
 
 
     </div>
@@ -1054,6 +1056,33 @@
   <div id="fees-list" class="space-y-4"></div>
 </div>
 
+<div id="discounts" class="section hidden">
+  <h2 class="text-2xl font-semibold mb-4">Manage Discount Codes</h2>
+  <form id="add-discount-form" class="space-y-3">
+    <input type="text" placeholder="Code (e.g. CHAWP10)" required id="discount-code" class="input">
+    <select id="discount-type" class="input">
+      <option value="percent">Percent (%)</option>
+      <option value="flat">Flat Amount (GH₵)</option>
+    </select>
+<select id="discount-applies-to" class="input" required>
+  <option value="subtotal">Subtotal (Food + Processing)</option>
+  <option value="delivery">Delivery Fee Only</option>
+</select>
+<input type="number" id="discount-value" placeholder="Discount Amount" class="input" required>
+    <input type="number" id="discount-max-uses" placeholder="Max Uses (optional)" class="input">
+    <input type="datetime-local" id="discount-expiry" class="input">
+<div style="display: flex; align-items: center; gap: 12px;">
+  <label for="discount-active" style="color: #e0e0e0; font-weight: 500;">Active</label>
+  <label class="toggle-switch">
+    <input type="checkbox" id="discount-active" checked>
+    <span class="slider"></span>
+  </label>
+</div>
+    <button class="btn btn-primary" type="submit">Add Discount Code</button>
+  </form>
+  <hr class="my-4">
+  <div id="discount-list" class="space-y-3"></div>
+</div>
 
 
 
@@ -1208,7 +1237,7 @@ function showLoginNotification(message, type = "success") {
 
 // Section Toggle
 function toggleSection(sectionId) {
-const sections = ["dashboard", "restaurants", "vendor-mappings", "orders", "users", "delivery", "settings", "earnings", "edit-restaurant", "edit-menu", "app", "fees"];
+const sections = ["dashboard", "restaurants", "vendor-mappings", "orders", "users", "delivery", "settings", "earnings", "edit-restaurant", "edit-menu", "app", "fees", "discounts"];
     sections.forEach(id => {
         const section = document.getElementById(id);
         if (section) {
@@ -1221,6 +1250,67 @@ const sections = ["dashboard", "restaurants", "vendor-mappings", "orders", "user
     });
     closeSidebar();
 }
+
+const loadDiscounts = async () => {
+  const container = document.getElementById("discount-list");
+  container.innerHTML = "Loading...";
+
+  const snapshot = await getDocs(collection(db, "discountCodes"));
+  container.innerHTML = "";
+
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    const id = doc.id;
+
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      <h4>${data.code}</h4>
+<p>
+  ${data.type === "percent" ? data.value + "% off" : "GH₵" + data.value + " off"} 
+  ${data.appliesTo === "delivery" ? "Delivery fee" : "Subtotal"}
+</p>
+      <p>Status: ${data.active ? "✅ Active" : "❌ Inactive"}</p>
+      <p>Uses: ${data.uses ?? 0} / ${data.maxUses ?? "∞"}</p>
+      ${data.expiresAt ? `<p>Expires: ${new Date(data.expiresAt).toLocaleString()}</p>` : ""}
+      <div class="item-actions">
+        <button class="btn btn-secondary edit-code">Edit</button>
+        <button class="btn btn-tertiary toggle-code">${data.active ? "Deactivate" : "Activate"}</button>
+        <button class="btn btn-primary delete-code">Delete</button>
+      </div>
+    `;
+
+    // DELETE
+    div.querySelector(".delete-code").addEventListener("click", async () => {
+      if (confirm(`Delete discount code ${data.code}?`)) {
+        await deleteDoc(doc.ref);
+        showNotification("Discount code deleted");
+        loadDiscounts();
+      }
+    });
+
+    // TOGGLE ACTIVE
+    div.querySelector(".toggle-code").addEventListener("click", async () => {
+      await updateDoc(doc.ref, { active: !data.active });
+      showNotification(`Code ${data.code} is now ${!data.active ? "inactive" : "active"}`);
+      loadDiscounts();
+    });
+
+    // EDIT
+    div.querySelector(".edit-code").addEventListener("click", () => {
+      document.getElementById("discount-code").value = data.code;
+      document.getElementById("discount-type").value = data.type;
+      document.getElementById("discount-value").value = data.value;
+      document.getElementById("discount-max-uses").value = data.maxUses ?? "";
+      document.getElementById("discount-expiry").value = data.expiresAt ? new Date(data.expiresAt).toISOString().slice(0, 16) : "";
+      document.getElementById("discount-active").checked = data.active;
+    });
+
+    container.appendChild(div);
+  });
+};
+
+
 async function loadTrendingToggles() {
   const container = document.getElementById("trending-toggle-list");
   container.innerHTML = "Loading...";
@@ -2115,6 +2205,44 @@ async function deleteUser(id) {
 }
 
 // Form Handlers
+document.getElementById("add-discount-form").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const code = document.getElementById("discount-code").value.trim().toUpperCase();
+  const type = document.getElementById("discount-type").value;
+  const value = parseFloat(document.getElementById("discount-value").value);
+  const maxUses = parseInt(document.getElementById("discount-max-uses").value) || null;
+  const expiresAtRaw = document.getElementById("discount-expiry").value;
+  const active = document.getElementById("discount-active").checked;
+  const expiresAt = expiresAtRaw ? new Date(expiresAtRaw).toISOString() : null;
+const appliesTo = document.getElementById("discount-applies-to").value;
+
+  if (!code || isNaN(value) || value <= 0) {
+    showNotification("Please enter a valid code and value", "error");
+    return;
+  }
+
+  try {
+   await setDoc(doc(db, "discountCodes", code), {
+  code,
+  type,
+  value,
+  active,
+  maxUses,
+  expiresAt,
+  appliesTo // ✅ NEW
+}, { merge: true });
+
+    showNotification("Discount code saved ✅");
+    e.target.reset();
+    loadDiscounts();
+  } catch (err) {
+    console.error(err);
+    showNotification("Failed to save discount code", "error");
+  }
+});
+
+
 document.getElementById("restaurant-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
@@ -2521,6 +2649,11 @@ document.getElementById("delivery-personnel-form").addEventListener("submit", as
 });
 
 // Event Listeners
+document.getElementById("discounts-btn").addEventListener("click", () => {
+  toggleSection("discounts");
+  loadDiscounts();
+});
+
 document.getElementById("earnings-btn").addEventListener("click", () => {
     toggleSection("earnings");
     loadEarnings();
