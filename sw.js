@@ -1,5 +1,5 @@
 // sw.js - Updated on 2025-04-06
-const CACHE_NAME = 'chawp-admin-v26';
+const CACHE_NAME = 'chawp-admin-v27';
 const urlsToCache = [
   '/',
   '/index.html',
