@@ -1002,9 +1002,11 @@
         </div>
 
         <div id="users" class="section hidden">
-            <h2 class="text-2xl font-semibold mb-4">Manage Users</h2>
-            <div id="users-list"></div>
-        </div>
+  <h2 class="text-2xl font-semibold mb-4">Manage Users</h2>
+  <button id="download-phone-numbers" class="btn btn-secondary mb-4">Download Phone Numbers</button>
+  <div id="users-list"></div>
+</div>
+
 
         <!-- Updated Delivery Section in the main-content div -->
 <div id="delivery" class="section hidden">
@@ -1414,6 +1416,42 @@ async function loadTrendingList() {
     container.appendChild(wrapper);
   });
 }
+
+// Function to extract phone numbers and download as a .txt file
+async function downloadUserPhoneNumbers() {
+  try {
+    const querySnapshot = await getDocs(collection(db, "users"));
+    let phoneNumbers = [];
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.phone) {
+        phoneNumbers.push(data.phone);
+      }
+    });
+
+    if (phoneNumbers.length === 0) {
+      showNotification("No phone numbers found.", "error");
+      return;
+    }
+
+    const blob = new Blob([phoneNumbers.join("\n")], { type: "text/plain;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "user_phone_numbers.txt";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showNotification("Phone numbers exported to user_phone_numbers.txt");
+  } catch (error) {
+    console.error("Error exporting phone numbers:", error);
+    showNotification("Failed to export phone numbers", "error");
+  }
+}
+
+// Attach the button’s click event to trigger the download
+document.getElementById("download-phone-numbers").addEventListener("click", downloadUserPhoneNumbers);
 
 
 // Restaurant Functions
